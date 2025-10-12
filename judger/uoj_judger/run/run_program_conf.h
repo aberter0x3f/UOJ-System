@@ -1,3 +1,31 @@
+#pragma once
+
+#include <fcntl.h>
+#include <seccomp.h>
+#include <sys/prctl.h>
+#include <sys/ptrace.h>
+#include <sys/resource.h>
+#include <sys/stat.h>
+#include <sys/user.h>
+#include <sys/wait.h>
+#include <syscall.h>
+#include <unistd.h>
+
+#include <climits>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
+
+#include "uoj_work_path.h"
+
+// Forward declaration from run_program.cpp
+struct RunProgramConfig;
+
 #ifdef __x86_64__
 typedef unsigned long long int reg_val_t;
 #define REG_SYSCALL orig_rax
@@ -7,782 +35,566 @@ typedef unsigned long long int reg_val_t;
 #define REG_ARG2 rdx
 #define REG_ARG3 rcx
 #else
-typedef long int reg_val_t;
-#define REG_SYSCALL orig_eax
-#define REG_RET eax
-#define REG_ARG0 ebx
-#define REG_ARG1 ecx
-#define REG_ARG2 edx
-#define REG_ARG3 esx
+#error "Only x86-64 is supported"
 #endif
 
-const size_t MaxPathLen = 200;
+const int N_SYSCALL = 512;
+const int SYSCALL_SOFT_BAN_MASK = 996 << 18;
 
-set<string> writable_file_name_set;
-set<string> readable_file_name_set;
-set<string> statable_file_name_set;
-set<string> soft_ban_file_name_set;
-int syscall_max_cnt[1000];
-bool syscall_should_soft_ban[1000];
+enum EX_CHECK_TYPE : unsigned {
+	ECT_NONE = 0,
+	ECT_CNT = 1,
+	ECT_FILE_OP = 1 << 1,
+	ECT_END_AT = 1 << 2,
+	ECT_FILEAT_OP = ECT_FILE_OP | ECT_END_AT,
+	ECT_FILE_W = 1 << 3,
+	ECT_FILE_R = 1 << 4,
+	ECT_FILE_S = 1 << 5,
+	ECT_CHECK_OPEN_FLAGS = 1 << 6,
+	ECT_FILE2_W = 1 << 7,
+	ECT_CLONE_THREAD = 1 << 10,
+};
 
-string basename(const string &path) {
-	size_t p = path.rfind('/');
-	if (p == string::npos) {
-		return path;
-	} else {
-		return path.substr(p + 1);
-	}
-}
-string dirname(const string &path) {
-	size_t p = path.rfind('/');
-	if (p == string::npos) {
-		return "";
-	} else {
-		return path.substr(0, p);
-	}
-}
-string getcwdp(pid_t pid) {
-	char s[20];
-	char cwd[MaxPathLen + 1];
-	if (pid != 0) {
-		sprintf(s, "/proc/%lld/cwd", (long long int)pid);
-	} else {
-		sprintf(s, "/proc/self/cwd");
-	}
-	int l = readlink(s, cwd, MaxPathLen);
-	if (l == -1) {
-		return "";
-	}
-	cwd[l] = '\0';
-	return cwd;
-}
-string abspath(pid_t pid, const string &path) {
-	if (path.size() > MaxPathLen) {
-		return "";
-	}
-	if (path.empty()) {
-		return path;
-	} 
-	string s;
-	string b;
-	size_t st;
-	if (path[0] == '/') {
-		s = "/";
-		st = 1;
-	} else {
-		s = getcwdp(pid) + "/";
-		st = 0;
-	}
-	for (size_t i = st; i < path.size(); i++) {
-		b += path[i];
-		if (path[i] == '/') {
-			if (b == "../" && !s.empty()) {
-				if (s == "./") {
-					s = "../";
-				} else if (s != "/") {
-					size_t p = s.size() - 1;
-					while (p > 0 && s[p - 1] != '/') {
-						p--;
-					}
-					if (s.size() - p == 3 && s[p] == '.' && s[p + 1] == '.' && s[p + 2] == '/') {
-						s += b;
-					} else {
-						s.resize(p);
-					}
-				}
-			} else if (b != "./" && b != "/") {
-				s += b;
-			}
-			b.clear();
+struct syscall_info {
+	EX_CHECK_TYPE extra_check;
+	int max_cnt;
+	bool should_soft_ban = false;
+	bool is_kill = false;
+
+	syscall_info() : extra_check(ECT_CNT), max_cnt(0) {}
+	syscall_info(unsigned extra_check, int max_cnt) :
+	    extra_check((EX_CHECK_TYPE)extra_check), max_cnt(max_cnt) {}
+
+	static syscall_info unlimited() { return syscall_info(ECT_NONE, -1); }
+
+	static syscall_info count_based(int max_cnt) { return syscall_info(ECT_CNT, max_cnt); }
+
+	static syscall_info with_extra_check(unsigned extra_check, int max_cnt = -1) {
+		if (max_cnt != -1) {
+			extra_check |= ECT_CNT;
 		}
+		return syscall_info(extra_check, max_cnt);
 	}
-	if (b == ".." && !s.empty()) {
-		if (s == "./") {
-			s = "..";
-		} else if (s != "/") {
-			size_t p = s.size() - 1;
-			while (p > 0 && s[p - 1] != '/') {
-				p--;
-			}
-			if (s.size() - p == 3 && s[p] == '.' && s[p + 1] == '.' && s[p + 2] == '/') {
-				s += b;
-			} else {
-				s.resize(p);
-			}
+
+	static syscall_info kill_type_syscall(unsigned extra_check = ECT_CNT, int max_cnt = 0) {
+		if (max_cnt != -1) {
+			extra_check |= ECT_CNT;
 		}
-	} else if (b != ".") {
-		s += b;
+		syscall_info res(extra_check, max_cnt);
+		res.is_kill = true;
+		return res;
 	}
-	if (s.size() >= 2 && s[s.size() - 1] == '/') {
-		s.resize(s.size() - 1);
+
+	static syscall_info soft_ban() {
+		syscall_info res(ECT_CNT, 0);
+		res.should_soft_ban = true;
+		return res;
 	}
-	return s;
+};
+
+std::map<std::string, std::vector<std::pair<int, syscall_info>>> allowed_syscall_list = {
+    {"default",
+     {
+         {__NR_read, syscall_info::unlimited()},
+         {__NR_pread64, syscall_info::unlimited()},
+         {__NR_write, syscall_info::unlimited()},
+         {__NR_pwrite64, syscall_info::unlimited()},
+         {__NR_readv, syscall_info::unlimited()},
+         {__NR_writev, syscall_info::unlimited()},
+         {__NR_preadv, syscall_info::unlimited()},
+         {__NR_pwritev, syscall_info::unlimited()},
+         {__NR_sendfile, syscall_info::unlimited()},
+
+         {__NR_close, syscall_info::unlimited()},
+         {__NR_fstat, syscall_info::unlimited()},
+         {__NR_fstatfs, syscall_info::unlimited()},
+         {__NR_lseek, syscall_info::unlimited()},
+         {__NR_dup, syscall_info::unlimited()},
+         {__NR_dup2, syscall_info::unlimited()},
+         {__NR_dup3, syscall_info::unlimited()},
+         {__NR_ioctl, syscall_info::unlimited()},
+         {__NR_fcntl, syscall_info::unlimited()},
+
+         {__NR_gettid, syscall_info::unlimited()},
+         {__NR_getpid, syscall_info::unlimited()},
+
+         {__NR_mmap, syscall_info::unlimited()},
+         {__NR_mprotect, syscall_info::unlimited()},
+         {__NR_munmap, syscall_info::unlimited()},
+         {__NR_brk, syscall_info::unlimited()},
+         {__NR_mremap, syscall_info::unlimited()},
+         {__NR_msync, syscall_info::unlimited()},
+         {__NR_mincore, syscall_info::unlimited()},
+         {__NR_madvise, syscall_info::unlimited()},
+
+         {__NR_rt_sigaction, syscall_info::unlimited()},
+         {__NR_rt_sigprocmask, syscall_info::unlimited()},
+         {__NR_rt_sigreturn, syscall_info::unlimited()},
+         {__NR_rt_sigpending, syscall_info::unlimited()},
+         {__NR_sigaltstack, syscall_info::unlimited()},
+
+         {__NR_getcwd, syscall_info::unlimited()},
+         {__NR_uname, syscall_info::unlimited()},
+
+         {__NR_exit, syscall_info::unlimited()},
+         {__NR_exit_group, syscall_info::unlimited()},
+
+         {__NR_arch_prctl, syscall_info::unlimited()},
+
+         {__NR_getrusage, syscall_info::unlimited()},
+         {__NR_getrlimit, syscall_info::unlimited()},
+
+         {__NR_gettimeofday, syscall_info::unlimited()},
+         {__NR_times, syscall_info::unlimited()},
+         {__NR_time, syscall_info::unlimited()},
+         {__NR_clock_gettime, syscall_info::unlimited()},
+         {__NR_clock_getres, syscall_info::unlimited()},
+
+         {__NR_restart_syscall, syscall_info::unlimited()},
+
+         // for startup
+         {__NR_setitimer, syscall_info::count_based(1)},
+         {__NR_execve, syscall_info::count_based(1)},
+         {__NR_set_robust_list, syscall_info::unlimited()},
+
+         {__NR_set_tid_address, syscall_info::count_based(1)},
+         {__NR_rseq, syscall_info::count_based(1)},
+
+         // need to check file permissions
+         {__NR_open, syscall_info::with_extra_check(ECT_FILE_OP | ECT_CHECK_OPEN_FLAGS)},
+         {__NR_openat, syscall_info::with_extra_check(ECT_FILEAT_OP | ECT_CHECK_OPEN_FLAGS)},
+         {__NR_readlink, syscall_info::with_extra_check(ECT_FILE_OP | ECT_FILE_S)},
+         {__NR_readlinkat, syscall_info::with_extra_check(ECT_FILEAT_OP | ECT_FILE_S)},
+         {__NR_access, syscall_info::with_extra_check(ECT_FILE_OP | ECT_FILE_R)},
+         {__NR_faccessat, syscall_info::with_extra_check(ECT_FILEAT_OP | ECT_FILE_R)},
+         {__NR_faccessat2, syscall_info::with_extra_check(ECT_FILEAT_OP | ECT_FILE_R)},
+         {__NR_stat, syscall_info::with_extra_check(ECT_FILE_OP | ECT_FILE_S)},
+         {__NR_statfs, syscall_info::with_extra_check(ECT_FILE_OP | ECT_FILE_S)},
+         {__NR_lstat, syscall_info::with_extra_check(ECT_FILE_OP | ECT_FILE_S)},
+         {__NR_newfstatat, syscall_info::with_extra_check(ECT_FILEAT_OP | ECT_FILE_S)},
+
+         // kill could be DGS or RE
+         {__NR_kill, syscall_info::kill_type_syscall()},
+         {__NR_tkill, syscall_info::kill_type_syscall()},
+         {__NR_tgkill, syscall_info::kill_type_syscall()},
+
+         // for python
+         {__NR_prlimit64, syscall_info::soft_ban()},
+
+         // for python and java
+         {__NR_sysinfo, syscall_info::unlimited()},
+
+         // python3 uses this call to generate random numbers
+         // for fairness, all types of programs can use this call
+         {__NR_getrandom, syscall_info::unlimited()},
+
+         // futex
+         {__NR_futex, syscall_info::unlimited()},
+
+         // some python library uses epoll (e.g., z3-solver)
+         {__NR_epoll_create, syscall_info::unlimited()},
+         {__NR_epoll_create1, syscall_info::unlimited()},
+         {__NR_epoll_ctl, syscall_info::unlimited()},
+         {__NR_epoll_wait, syscall_info::unlimited()},
+         {__NR_epoll_pwait, syscall_info::unlimited()},
+
+         // for java
+         {__NR_geteuid, syscall_info::unlimited()},
+         {__NR_getuid, syscall_info::unlimited()},
+         {__NR_setrlimit, syscall_info::soft_ban()},
+         {__NR_socket, syscall_info::soft_ban()},
+         {__NR_connect, syscall_info::soft_ban()},
+     }},
+    {"allow_proc",
+     {
+         {__NR_clone, syscall_info::unlimited()},
+         {__NR_clone3, syscall_info::unlimited()},
+         {__NR_fork, syscall_info::unlimited()},
+         {__NR_vfork, syscall_info::unlimited()},
+         {__NR_nanosleep, syscall_info::unlimited()},
+         {__NR_clock_nanosleep, syscall_info::unlimited()},
+         {__NR_wait4, syscall_info::unlimited()},
+
+         {__NR_execve, syscall_info::with_extra_check(ECT_FILE_OP | ECT_FILE_R)},
+     }},
+    {"python",
+     {
+         {__NR_getdents, syscall_info::unlimited()},
+         {__NR_getdents64, syscall_info::unlimited()},
+     }},
+    {"java",
+     {
+         {__NR_clone, syscall_info::with_extra_check(ECT_CLONE_THREAD, -1)},
+         {__NR_clone3, syscall_info::with_extra_check(ECT_CLONE_THREAD, -1)},
+         {__NR_rseq, syscall_info::unlimited()},
+         {__NR_getdents, syscall_info::unlimited()},
+         {__NR_getdents64, syscall_info::unlimited()},
+         {__NR_sched_getaffinity, syscall_info::unlimited()},
+         {__NR_sched_yield, syscall_info::unlimited()},
+         {__NR_prctl, syscall_info::unlimited()},
+         {__NR_prlimit64, syscall_info::unlimited()},
+         {__NR_socket, syscall_info::soft_ban()},
+         {__NR_connect, syscall_info::soft_ban()},
+         {__NR_nanosleep, syscall_info::unlimited()},
+         {__NR_clock_nanosleep, syscall_info::unlimited()},
+     }},
+    {"compiler",
+     {
+         {__NR_clone, syscall_info::unlimited()},
+         {__NR_clone3, syscall_info::unlimited()},
+         {__NR_fork, syscall_info::unlimited()},
+         {__NR_vfork, syscall_info::unlimited()},
+         {__NR_execve, syscall_info::with_extra_check(ECT_FILE_OP | ECT_FILE_R)},
+         {__NR_wait4, syscall_info::unlimited()},
+         {__NR_set_tid_address, syscall_info::unlimited()},
+         {__NR_getdents, syscall_info::unlimited()},
+         {__NR_getdents64, syscall_info::unlimited()},
+         {__NR_umask, syscall_info::unlimited()},
+         {__NR_prlimit64, syscall_info::unlimited()},
+         {__NR_rename, syscall_info::with_extra_check(ECT_FILE_OP | ECT_FILE_W | ECT_FILE2_W)},
+         {__NR_unlink, syscall_info::with_extra_check(ECT_FILE_OP | ECT_FILE_W)},
+         {__NR_chmod, syscall_info::with_extra_check(ECT_FILE_OP | ECT_FILE_W)},
+         {__NR_mkdir, syscall_info::with_extra_check(ECT_FILE_OP | ECT_FILE_W)},
+         {__NR_rmdir, syscall_info::with_extra_check(ECT_FILE_OP | ECT_FILE_W)},
+         {__NR_chdir, syscall_info::with_extra_check(ECT_FILE_OP | ECT_FILE_S)},
+         {__NR_fchdir, syscall_info::unlimited()},
+         {__NR_ftruncate, syscall_info::unlimited()},
+         {__NR_prctl, syscall_info::unlimited()},
+         {__NR_rseq, syscall_info::unlimited()},
+         {__NR_statx, syscall_info::with_extra_check(ECT_FILEAT_OP | ECT_FILE_S)},
+         {__NR_newfstatat, syscall_info::with_extra_check(ECT_FILEAT_OP | ECT_FILE_S)},
+         {__NR_unlinkat, syscall_info::with_extra_check(ECT_FILEAT_OP | ECT_FILE_W)},
+         {__NR_renameat, syscall_info::with_extra_check(ECT_FILEAT_OP | ECT_FILE_W | ECT_FILE2_W)},
+         {__NR_mkdirat, syscall_info::with_extra_check(ECT_FILEAT_OP | ECT_FILE_W)},
+         {__NR_fchmod, syscall_info::unlimited()},
+         {__NR_fchmodat, syscall_info::with_extra_check(ECT_FILEAT_OP | ECT_FILE_W)},
+         {__NR_socketpair, syscall_info::unlimited()},
+     }},
+};
+
+std::map<std::string, std::vector<std::string>> readable_file_name_list = {
+    {"default",
+     {
+         "/lib/x86_64-linux-gnu/", "/usr/lib/x86_64-linux-gnu/", "/usr/lib/locale/",
+         "/usr/share/zoneinfo/", "/etc/ld.so.nohwcap", "/etc/ld.so.preload", "/etc/ld.so.cache",
+         "/etc/timezone", "/etc/localtime", "/etc/locale.alias", "/proc/self/", "/proc/*",
+         "/dev/random", "/dev/urandom",
+         "/sys/devices/system/cpu/",  // for java & some python libraries
+         "/proc/sys/vm/",             // for java
+     }},
+    {"python2",
+     {
+         "/etc/python2.7/",
+         "/usr/bin/python2.7",
+         "/usr/lib/python2.7/",
+         "/usr/bin/lib/python2.7/",
+         "/usr/local/lib/python2.7/",
+         "/usr/lib/pymodules/python2.7/",
+         "/usr/bin/Modules/",
+         "/usr/bin/pybuilddir.txt",
+     }},
+    {"python3",
+     {
+         "/etc/python" UOJ_JUDGER_PYTHON3_VERSION "/",
+         "/usr/bin/python" UOJ_JUDGER_PYTHON3_VERSION "",
+         "/usr/lib/python" UOJ_JUDGER_PYTHON3_VERSION "/",
+         "/usr/lib/python3/dist-packages/",
+         "/usr/bin/lib/python" UOJ_JUDGER_PYTHON3_VERSION "/",
+         "/usr/local/lib/python" UOJ_JUDGER_PYTHON3_VERSION "/",
+         "/usr/bin/pyvenv.cfg",
+         "/usr/pyvenv.cfg",
+         "/usr/bin/Modules/",
+         "/usr/bin/pybuilddir.txt",
+         "/usr/lib/dist-python",
+     }},
+    {"java", {"/sys/fs/cgroup/", "/proc/", "/usr/share/java/"}},
+    {"java8", {"/usr/lib/jvm/java-8-openjdk-amd64/", "/etc/java-8-openjdk/"}},
+    {"java11", {"/usr/lib/jvm/java-11-openjdk-amd64/", "/etc/java-11-openjdk/"}},
+    {"compiler",
+     {
+         "system_root",
+         "/dev/",
+         "/usr/",
+         "/lib/",
+         "/lib64/",
+         "/bin/",
+         "/sbin/",
+         "/sys/fs/cgroup/",
+         "/proc/",
+         "/etc/timezone",
+         "/etc/python2.7/",
+         "/etc/python" UOJ_JUDGER_PYTHON3_VERSION "/",
+         "/etc/fpc-" UOJ_JUDGER_FPC_VERSION ".cfg",
+         "/etc/java-8-openjdk/",
+         "/etc/java-11-openjdk/",
+     }},
+};
+
+std::map<std::string, std::vector<std::string>> writable_file_name_list = {
+    {"default", {"/dev/null", "/proc/self/coredump_filter"}},
+    {"compiler", {"/tmp/"}},
+};
+
+std::map<std::string, std::vector<std::string>> statable_file_name_list = {
+    {"python", {"/usr", "/usr/bin/", "/usr/lib/"}},
+    {"java", {"system_root", "/tmp/"}},
+    {"compiler", {"/*", "/boot/"}},
+};
+
+std::map<std::string, std::vector<std::string>> soft_ban_file_name_list = {
+    {"default", {"/dev/tty", "/dev/pts/", "/etc/nsswitch.conf", "/etc/passwd"}},
+};
+
+const size_t MaxPathLen = PATH_MAX;
+std::set<std::string> writable_file_name_set;
+std::set<std::string> readable_file_name_set;
+std::set<std::string> statable_file_name_set;
+std::set<std::string> soft_ban_file_name_set;
+syscall_info syscall_info_set[N_SYSCALL];
+
+std::string my_dirname(const std::string &path) {
+	size_t p = path.rfind('/');
+	if (p == std::string::npos) return ".";
+	if (p == 0) return "/";
+	return path.substr(0, p);
 }
-string realpath(const string &path) {
+
+std::string realpath_safe(const std::string &path) {
 	char real[PATH_MAX + 1] = {};
-	if (realpath(path.c_str(), real) == NULL) {
-		return "";
-	}
+	if (realpath(path.c_str(), real) == NULL) return "";
 	return real;
 }
 
-inline bool is_in_set_smart(string name, const set<string> &s) {
-	if (name.size() > MaxPathLen) {
-		return false;
+inline bool is_in_set_smart(std::string name, const std::set<std::string> &s) {
+	if (name.size() > MaxPathLen) return false;
+	if (s.count(name)) return true;
+	for (int level = 0; !name.empty() && name != "/"; name = my_dirname(name), level++) {
+		if (level == 0 && s.count(name + "/")) return true;
+		if (s.count(name + "/")) return true;
 	}
-	if (s.count(name)) {
-		return true;
-	}
-	for (size_t i = 0; i + 1 < name.size(); i++) {
-		if ((i == 0 || name[i - 1] == '/') && name[i] == '.' && name[i + 1] == '.' && (i + 2 == name.size() || name[i + 2] == '.')) {
-			return false;
-		}
-	}
-	int level;
-	for (level = 0; !name.empty(); name = dirname(name), level++) {
-		if (level == 1 && s.count(name + "/*")) {
-			return true;
-		}
-		if (s.count(name + "/")) {
-			return true;
-		}
-	}
-	if (level == 1 && s.count("/*")) {
-		return true;
-	}
-	if (s.count("/")) {
-		return true;
-	}
+	if (s.count("/*")) return true;
+	if (s.count("/")) return true;
 	return false;
 }
 
-inline bool is_writable_file(string name) {
-	if (name == "/") {
-		return writable_file_name_set.count("system_root");
-	}
-	return is_in_set_smart(name, writable_file_name_set) || is_in_set_smart(realpath(name), writable_file_name_set);
+inline bool is_writable_file(const std::string &name) {
+	if (name == "/") return writable_file_name_set.count("system_root");
+	return is_in_set_smart(name, writable_file_name_set);
 }
-inline bool is_readable_file(const string &name) {
-	if (is_writable_file(name)) {
-		return true;
-	}
-	if (name == "/") {
-		return readable_file_name_set.count("system_root");
-	}
-	return is_in_set_smart(name, readable_file_name_set) || is_in_set_smart(realpath(name), readable_file_name_set);
+inline bool is_readable_file(const std::string &name) {
+	if (is_writable_file(name)) return true;
+	if (name == "/") return readable_file_name_set.count("system_root");
+	return is_in_set_smart(name, readable_file_name_set);
 }
-inline bool is_statable_file(const string &name) {
-	if (is_readable_file(name)) {
-		return true;
-	}
-	if (name == "/") {
-		return statable_file_name_set.count("system_root");
-	}
-	return is_in_set_smart(name, statable_file_name_set) || is_in_set_smart(realpath(name), statable_file_name_set);
+inline bool is_statable_file(const std::string &name) {
+	if (is_readable_file(name)) return true;
+	if (name == "/") return statable_file_name_set.count("system_root");
+	return is_in_set_smart(name, statable_file_name_set);
 }
-inline bool is_soft_ban_file(const string &name) {
-	if (name == "/") {
-		return soft_ban_file_name_set.count("system_root");
-	}
-	return is_in_set_smart(name, soft_ban_file_name_set) || is_in_set_smart(realpath(name), soft_ban_file_name_set);
+inline bool is_soft_ban_file(const std::string &name) {
+	if (name == "/") return soft_ban_file_name_set.count("system_root");
+	return is_in_set_smart(name, soft_ban_file_name_set);
 }
 
-#ifdef __x86_64__
-int syscall_max_cnt_list_default[][2] = {
-	{__NR_read          , -1},
-	{__NR_write         , -1},
-	{__NR_readv         , -1},
-	{__NR_writev        , -1},
-	{__NR_pread64       , -1},
-	{__NR_open          , -1},
-	{__NR_unlink        , -1},
-	{__NR_close         , -1},
-	{__NR_readlink      , -1},
-	{__NR_openat        , -1},
-	{__NR_unlinkat      , -1},
-	{__NR_readlinkat    , -1},
-	{__NR_stat          , -1},
-	{__NR_fstat         , -1},
-	{__NR_lstat         , -1},
-	{__NR_lseek         , -1},
-	{__NR_access        , -1},
-	{__NR_dup           , -1},
-	{__NR_dup2          , -1},
-	{__NR_dup3          , -1},
-	{__NR_ioctl         , -1},
-	{__NR_fcntl         , -1},
+void add_file_permission(const std::string &file_name, char mode) {
+	if (file_name.empty()) return;
+	std::string real_fn = realpath_safe(file_name);
 
-	{__NR_mmap          , -1},
-	{__NR_mprotect      , -1},
-	{__NR_munmap        , -1},
-	{__NR_brk           , -1},
-	{__NR_mremap        , -1},
-	{__NR_msync         , -1},
-	{__NR_mincore       , -1},
-	{__NR_madvise       , -1},
-	
-	{__NR_rt_sigaction  , -1},
-	{__NR_rt_sigprocmask, -1},
-	{__NR_rt_sigreturn  , -1},
-	{__NR_rt_sigpending , -1},
-	{__NR_sigaltstack   , -1},
-
-	{__NR_getcwd        , -1},
-
-	{__NR_exit          , -1},
-	{__NR_exit_group    , -1},
-
-	{__NR_arch_prctl    , -1},
-
-	{__NR_gettimeofday  , -1},
-	{__NR_getrlimit     , -1},
-	{__NR_getrusage     , -1},
-	{__NR_times         , -1},
-	{__NR_time          , -1},
-	{__NR_clock_gettime , -1},
-
-	{__NR_restart_syscall, -1},
-
-	{-1                 , -1}
-};
-
-int syscall_soft_ban_list_default[] = {
-	-1
-};
-
-const char *readable_file_name_list_default[] = {
-	"/etc/ld.so.nohwcap",
-	"/etc/ld.so.preload",
-	"/etc/ld.so.cache",
-	"/lib/x86_64-linux-gnu/",
-	"/usr/lib/x86_64-linux-gnu/",
-	"/usr/lib/locale/locale-archive",
-	"/proc/self/exe",
-	"/etc/timezone",
-	"/usr/share/zoneinfo/",
-	"/dev/random",
-	"/dev/urandom",
-	"/proc/meminfo",
-	"/etc/localtime",
-	NULL
-};
-
-#else
-#error T_T
-#endif
-
-void add_file_permission(const string &file_name, char mode) {
-	if (mode == 'w') {
-		writable_file_name_set.insert(file_name);
-	} else if (mode == 'r') {
-		readable_file_name_set.insert(file_name);
-	} else if (mode == 's') {
-		statable_file_name_set.insert(file_name);
-	}
-	for (string name = dirname(file_name); !name.empty(); name = dirname(name)) {
-		statable_file_name_set.insert(name);
-	}
-}
-
-void init_conf(const RunProgramConfig &config) {
-	for (int i = 0; syscall_max_cnt_list_default[i][0] != -1; i++) {
-		syscall_max_cnt[syscall_max_cnt_list_default[i][0]] = syscall_max_cnt_list_default[i][1];
-	}
-	for (int i = 0; syscall_soft_ban_list_default[i] != -1; i++) {
-		syscall_should_soft_ban[syscall_soft_ban_list_default[i]] = true;
-	}
-
-	for (int i = 0; readable_file_name_list_default[i]; i++) {
-		readable_file_name_set.insert(readable_file_name_list_default[i]);
-	}
-	statable_file_name_set.insert(config.work_path + "/");
-
-	if (config.type != "java8" && config.type != "java11") {
-		add_file_permission(config.program_name, 'r');
+	if (real_fn.empty()) {
+		real_fn = file_name;
 	} else {
-		int p = config.program_name.find('.');
-		if (p == string::npos) {
-			readable_file_name_set.insert(config.work_path + "/");
-		} else {
-			readable_file_name_set.insert(config.work_path + "/" + config.program_name.substr(0, p) + "/");
+		// realpath strips the trailing slash, add it back if it was there
+		if (!file_name.empty() && file_name.back() == '/' && real_fn.back() != '/') {
+			real_fn += '/';
 		}
 	}
-	add_file_permission(config.work_path, 'r');
 
-	for (vector<string>::const_iterator it = config.extra_readable_files.begin(); it != config.extra_readable_files.end(); it++) {
-		add_file_permission(*it, 'r');
-	}
-	for (vector<string>::const_iterator it = config.extra_writable_files.begin(); it != config.extra_writable_files.end(); it++) {
-		add_file_permission(*it, 'w');
-	}
+	if (mode == 'w')
+		writable_file_name_set.insert(real_fn);
+	else if (mode == 'r')
+		readable_file_name_set.insert(real_fn);
+	else if (mode == 's')
+		statable_file_name_set.insert(real_fn);
 
-	writable_file_name_set.insert("/dev/null");
-
-	if (config.allow_proc) {
-		syscall_max_cnt[__NR_clone          ] = -1;
-		syscall_max_cnt[__NR_fork           ] = -1;
-		syscall_max_cnt[__NR_vfork          ] = -1;
-		syscall_max_cnt[__NR_nanosleep      ] = -1;
-		syscall_max_cnt[__NR_execve         ] = -1;
-	}
-
-	if (config.type == "python2") {
-		syscall_max_cnt[__NR_set_tid_address] = 1;
-		syscall_max_cnt[__NR_set_robust_list] = 1;
-		syscall_max_cnt[__NR_futex          ] = -1;
-
-		syscall_max_cnt[__NR_getdents       ] = -1;
-		syscall_max_cnt[__NR_getdents64     ] = -1;
-
-		# ifdef UOJ_JUDGER_BASESYSTEM_UBUNTU1804
-		syscall_max_cnt[__NR_prlimit64      ] = -1;
-		syscall_max_cnt[__NR_getpid         ] = -1;
-		syscall_max_cnt[__NR_sysinfo        ] = -1;
-		# endif
-
-		readable_file_name_set.insert("/usr/bin/python2.7");
-		readable_file_name_set.insert("/usr/lib/python2.7/");
-		readable_file_name_set.insert("/usr/bin/lib/python2.7/");
-		readable_file_name_set.insert("/usr/local/lib/python2.7/");
-		readable_file_name_set.insert("/usr/lib/pymodules/python2.7/");
-		readable_file_name_set.insert("/usr/bin/Modules/");
-		readable_file_name_set.insert("/usr/bin/pybuilddir.txt");
-		# ifdef UOJ_JUDGER_BASESYSTEM_UBUNTU1804
-		readable_file_name_set.insert("/usr/lib/locale/");
-		readable_file_name_set.insert(config.work_path + "/answer.code");
-		# endif
-
-		statable_file_name_set.insert("/usr");
-		statable_file_name_set.insert("/usr/bin");
-	} else if (config.type == "python3") {
-		syscall_max_cnt[__NR_set_tid_address] = 1;
-		syscall_max_cnt[__NR_set_robust_list] = 1;
-		syscall_max_cnt[__NR_futex          ] = -1;
-
-		syscall_max_cnt[__NR_getdents       ] = -1;
-		syscall_max_cnt[__NR_getdents64     ] = -1;
-
-		# ifdef UOJ_JUDGER_BASESYSTEM_UBUNTU1804
-		syscall_max_cnt[__NR_prlimit64      ] = -1;
-		syscall_max_cnt[__NR_getrandom      ] = -1;
-		syscall_max_cnt[__NR_sysinfo        ] = -1;
-		syscall_max_cnt[__NR_getpid         ] = -1;
-		# endif
-
-		readable_file_name_set.insert("/usr/bin/python3");
-		readable_file_name_set.insert("/usr/lib/python3/");
-		# ifdef UOJ_JUDGER_PYTHON3_VERSION
-		readable_file_name_set.insert("/usr/bin/python" UOJ_JUDGER_PYTHON3_VERSION);
-		readable_file_name_set.insert("/usr/lib/python" UOJ_JUDGER_PYTHON3_VERSION "/");
-		readable_file_name_set.insert("/usr/bin/lib/python" UOJ_JUDGER_PYTHON3_VERSION "/");
-		readable_file_name_set.insert("/usr/local/lib/python" UOJ_JUDGER_PYTHON3_VERSION "/");
-		# else
-		readable_file_name_set.insert("/usr/bin/python3.4");
-		readable_file_name_set.insert("/usr/lib/python3.4/");
-		readable_file_name_set.insert("/usr/bin/lib/python3.4/");
-		readable_file_name_set.insert("/usr/local/lib/python3.4/");
-		# endif
-		readable_file_name_set.insert("/usr/bin/pyvenv.cfg");
-		readable_file_name_set.insert("/usr/pyvenv.cfg");
-		readable_file_name_set.insert("/usr/bin/Modules/");
-		readable_file_name_set.insert("/usr/bin/pybuilddir.txt");
-		readable_file_name_set.insert("/usr/lib/dist-python");
-		# ifdef UOJ_JUDGER_BASESYSTEM_UBUNTU1804
-		readable_file_name_set.insert("/usr/lib/locale/");
-		readable_file_name_set.insert(config.work_path + "/answer.code");
-		# endif
-
-		statable_file_name_set.insert("/usr");
-		statable_file_name_set.insert("/usr/bin");
-		statable_file_name_set.insert("/usr/lib");
-		# ifdef UOJ_JUDGER_BASESYSTEM_UBUNTU1804
-		statable_file_name_set.insert("/usr/lib/python38.zip");
-		# endif
-	} else if (config.type == "java8") {
-		syscall_max_cnt[__NR_gettid         ] = -1;
-		syscall_max_cnt[__NR_set_tid_address] = 1;
-		syscall_max_cnt[__NR_set_robust_list] = 14;
-		syscall_max_cnt[__NR_futex          ] = -1;
-
-		syscall_max_cnt[__NR_uname          ] = 1;
-
-		syscall_max_cnt[__NR_clone          ] = 13;
-
-		syscall_max_cnt[__NR_getdents       ] = 4;
-		syscall_max_cnt[__NR_getdents64     ] = 4;
-
-		syscall_max_cnt[__NR_clock_getres   ] = 2;
-
-		syscall_max_cnt[__NR_setrlimit      ] = 1;
-
-		syscall_max_cnt[__NR_sched_getaffinity] = -1;
-		syscall_max_cnt[__NR_sched_yield    ] = -1;
-
-		# ifdef UOJ_JUDGER_BASESYSTEM_UBUNTU1804
-		syscall_max_cnt[__NR_prlimit64      ] = -1;
-		syscall_max_cnt[__NR_getpid         ] = -1;
-		syscall_max_cnt[__NR_sysinfo        ] = -1;
-		syscall_max_cnt[__NR_clone          ] = -1;
-		syscall_max_cnt[__NR_set_robust_list] = -1;
-		syscall_max_cnt[__NR_prctl          ] = -1;
-		# endif
-
-		syscall_should_soft_ban[__NR_socket   ] = true;
-		syscall_should_soft_ban[__NR_connect  ] = true;
-		syscall_should_soft_ban[__NR_geteuid  ] = true;
-		syscall_should_soft_ban[__NR_getuid   ] = true;
-
-		soft_ban_file_name_set.insert("/etc/nsswitch.conf");
-		soft_ban_file_name_set.insert("/etc/passwd");
-
-		add_file_permission("/usr/lib/jvm/java-8-openjdk-amd64/", 'r');
-		readable_file_name_set.insert("/sys/devices/system/cpu/");
-		readable_file_name_set.insert("/proc/");
-		# ifdef UOJ_JUDGER_BASESYSTEM_UBUNTU1804
-		readable_file_name_set.insert("/sys/fs/cgroup/cpu/");
-		readable_file_name_set.insert("/sys/fs/cgroup/cpu,cpuacct/");
-		readable_file_name_set.insert("/sys/fs/cgroup/memory/");
-		readable_file_name_set.insert("/usr/lib/locale/");
-		# endif
-		statable_file_name_set.insert("/usr/java/");
-		statable_file_name_set.insert("/tmp/");
-	} else if (config.type == "java11") {
-		syscall_max_cnt[__NR_gettid         ] = -1;
-		syscall_max_cnt[__NR_set_tid_address] = 1;
-		syscall_max_cnt[__NR_set_robust_list] = 15;
-		syscall_max_cnt[__NR_futex          ] = -1;
-
-		syscall_max_cnt[__NR_uname          ] = 1;
-
-		syscall_max_cnt[__NR_clone          ] = 14;
-
-		syscall_max_cnt[__NR_getdents       ] = 4;
-		syscall_max_cnt[__NR_getdents64     ] = 4;
-
-		syscall_max_cnt[__NR_clock_getres   ] = 2;
-
-		syscall_max_cnt[__NR_setrlimit      ] = 1;
-
-		syscall_max_cnt[__NR_sched_getaffinity] = -1;
-		syscall_max_cnt[__NR_sched_yield    ] = -1;
-
-		# ifdef UOJ_JUDGER_BASESYSTEM_UBUNTU1804
-		syscall_max_cnt[__NR_prlimit64      ] = -1;
-		syscall_max_cnt[__NR_getpid         ] = -1;
-		syscall_max_cnt[__NR_sysinfo        ] = -1;
-		syscall_max_cnt[__NR_clone          ] = -1;
-		syscall_max_cnt[__NR_set_robust_list] = -1;
-		syscall_max_cnt[__NR_uname          ] = -1;
-		syscall_max_cnt[__NR_clock_getres   ] = -1;
-		syscall_max_cnt[__NR_pread64        ] = -1;
-		syscall_max_cnt[__NR_prctl          ] = -1;
-		syscall_max_cnt[__NR_nanosleep      ] = -1;
-		syscall_max_cnt[__NR_clock_nanosleep] = -1;
-		# endif
-
-		syscall_should_soft_ban[__NR_socket   ] = true;
-		syscall_should_soft_ban[__NR_connect  ] = true;
-		syscall_should_soft_ban[__NR_geteuid  ] = true;
-		syscall_should_soft_ban[__NR_getuid   ] = true;
-
-		soft_ban_file_name_set.insert("/etc/nsswitch.conf");
-		soft_ban_file_name_set.insert("/etc/passwd");
-
-		add_file_permission("/usr/lib/jvm/java-11-openjdk-amd64/", 'r');
-		readable_file_name_set.insert("/sys/devices/system/cpu/");
-		readable_file_name_set.insert("/proc/");
-		# ifdef UOJ_JUDGER_BASESYSTEM_UBUNTU1804
-		readable_file_name_set.insert("/sys/fs/cgroup/cpu/");
-		readable_file_name_set.insert("/sys/fs/cgroup/cpu,cpuacct/");
-		readable_file_name_set.insert("/sys/fs/cgroup/memory/");
-		readable_file_name_set.insert("/usr/share/java/");
-		readable_file_name_set.insert("/usr/lib/locale/");
-		readable_file_name_set.insert("/etc/oracle/java/usagetracker.properties");
-		# endif
-		statable_file_name_set.insert("/usr/java/");
-		statable_file_name_set.insert("/tmp/");
-		# ifdef UOJ_JUDGER_BASESYSTEM_UBUNTU1804
-		statable_file_name_set.insert("/usr/share/");
-		# endif
-	} else if (config.type == "compiler") {
-		syscall_max_cnt[__NR_gettid         ] = -1;
-		syscall_max_cnt[__NR_set_tid_address] = -1;
-		syscall_max_cnt[__NR_set_robust_list] = -1;
-		syscall_max_cnt[__NR_futex          ] = -1;
-
-		syscall_max_cnt[__NR_getpid         ] = -1;
-		syscall_max_cnt[__NR_vfork          ] = -1;
-		syscall_max_cnt[__NR_fork           ] = -1;
-		syscall_max_cnt[__NR_clone          ] = -1;
-		syscall_max_cnt[__NR_execve         ] = -1;
-		syscall_max_cnt[__NR_wait4          ] = -1;
-
-		syscall_max_cnt[__NR_clock_gettime  ] = -1;
-		syscall_max_cnt[__NR_clock_getres   ] = -1;
-
-		syscall_max_cnt[__NR_setrlimit      ] = -1;
-		syscall_max_cnt[__NR_pipe           ] = -1;
-		syscall_max_cnt[__NR_pipe2           ] = -1;
-
-		syscall_max_cnt[__NR_getdents64     ] = -1;
-		syscall_max_cnt[__NR_getdents       ] = -1;
-
-		syscall_max_cnt[__NR_umask          ] = -1;
-		syscall_max_cnt[__NR_rename         ] = -1;
-		syscall_max_cnt[__NR_chmod          ] = -1;
-		syscall_max_cnt[__NR_mkdir          ] = -1;
-
-		syscall_max_cnt[__NR_chdir          ] = -1;
-		syscall_max_cnt[__NR_fchdir         ] = -1;
-
-		syscall_max_cnt[__NR_ftruncate      ] = -1; // for javac = =
-
-		syscall_max_cnt[__NR_sched_getaffinity] = -1; // for javac = =
-		syscall_max_cnt[__NR_sched_yield      ] = -1; // for javac = =
-
-		syscall_max_cnt[__NR_uname          ] = -1; // for javac = =
-		syscall_max_cnt[__NR_sysinfo        ] = -1; // for javac = =
-
-		# ifdef UOJ_JUDGER_BASESYSTEM_UBUNTU1804
-		syscall_max_cnt[__NR_prlimit64      ] = -1;
-		syscall_max_cnt[__NR_getrandom      ] = -1;
-		syscall_max_cnt[__NR_pread64        ] = -1;
-		syscall_max_cnt[__NR_prctl          ] = -1;
-		syscall_max_cnt[__NR_nanosleep      ] = -1;
-		syscall_max_cnt[__NR_clock_nanosleep] = -1;
-		syscall_max_cnt[__NR_socketpair     ] = -1;
-		# endif
-
-		syscall_should_soft_ban[__NR_socket   ] = true; // for javac
-		syscall_should_soft_ban[__NR_connect  ] = true; // for javac
-		syscall_should_soft_ban[__NR_geteuid  ] = true; // for javac
-		syscall_should_soft_ban[__NR_getuid  ] = true; // for javac
-
-		writable_file_name_set.insert("/tmp/");
-
-		readable_file_name_set.insert(config.work_path);
-		writable_file_name_set.insert(config.work_path + "/");
-
-		readable_file_name_set.insert(abspath(0, string(self_path) + "/../runtime") + "/");
-		# ifdef UOJ_JUDGER_BASESYSTEM_UBUNTU1804
-		readable_file_name_set.insert("/sys/fs/cgroup/cpu/");
-		readable_file_name_set.insert("/sys/fs/cgroup/cpu,cpuacct/");
-		readable_file_name_set.insert("/sys/fs/cgroup/memory/");
-		readable_file_name_set.insert("/etc/oracle/java/usagetracker.properties");
-		# endif
-
-		readable_file_name_set.insert("system_root");
-		readable_file_name_set.insert("/usr/");
-		readable_file_name_set.insert("/lib/");
-		readable_file_name_set.insert("/lib64/");
-		readable_file_name_set.insert("/bin/");
-		readable_file_name_set.insert("/sbin/");
-		// readable_file_name_set.insert("/proc/meminfo");
-		// readable_file_name_set.insert("/proc/self/");
-
-		readable_file_name_set.insert("/sys/devices/system/cpu/");
-		readable_file_name_set.insert("/proc/");
-		soft_ban_file_name_set.insert("/etc/nsswitch.conf"); // for javac = =
-		soft_ban_file_name_set.insert("/etc/passwd"); // for javac = =
-
-		readable_file_name_set.insert("/etc/timezone");
-		# ifdef UOJ_JUDGER_FPC_VERSION
-		readable_file_name_set.insert("/etc/fpc-" UOJ_JUDGER_FPC_VERSION ".cfg.d/");
-		# else
-		readable_file_name_set.insert("/etc/fpc-2.6.2.cfg.d/");
-		# endif
-		readable_file_name_set.insert("/etc/fpc.cfg");
-
-		statable_file_name_set.insert("/*");
+	if (real_fn == "system_root" || real_fn == "/*" || real_fn == "/") return;
+	for (std::string name = my_dirname(real_fn); !name.empty() && name != ".";
+	     name = my_dirname(name)) {
+		statable_file_name_set.insert(name);
+		if (name == "/") break;
 	}
 }
 
-string read_string_from_regs(reg_val_t addr, pid_t pid) {
+void init_conf(const RunProgramConfig &config);  // Implemented in run_program.cpp
+
+enum CHILD_PROC_FLAG : unsigned { CPF_STARTUP = 1u << 0, CPF_IGNORE_ONE_SIGSTOP = 1u << 2 };
+
+struct rp_child_proc {
+	pid_t pid;
+	unsigned flags;
+	struct user_regs_struct reg = {};
+	int syscall = -1;
+	bool try_to_create_new_process = false;
+
+	void soft_ban_syscall(int set_no = EPERM) {
+		this->reg.REG_SYSCALL = SYSCALL_SOFT_BAN_MASK | set_no;
+		ptrace(PTRACE_SETREGS, pid, NULL, &this->reg);
+	}
+};
+
+std::string read_string_from_addr(reg_val_t addr, pid_t pid) {
 	char res[MaxPathLen + 1], *ptr = res;
 	while (ptr != res + MaxPathLen) {
-		*(reg_val_t*)ptr = ptrace(PTRACE_PEEKDATA, pid, addr, NULL);
-		for (int i = 0; i < sizeof(reg_val_t); i++, ptr++, addr++) {
-			if (*ptr == 0) {
-				return res;
-			}
+		*(reg_val_t *)ptr = ptrace(PTRACE_PEEKDATA, pid, addr, NULL);
+		for (size_t i = 0; i < sizeof(reg_val_t); i++, ptr++, addr++) {
+			if (*ptr == 0) return res;
 		}
 	}
 	res[MaxPathLen] = 0;
 	return res;
 }
-string read_abspath_from_regs(reg_val_t addr, pid_t pid) {
-	return abspath(pid, read_string_from_regs(addr, pid));
+
+std::string abspath_safe(const std::string &path, pid_t pid) {
+	if (path.empty() || path[0] != '/') {
+		char cwd[PATH_MAX];
+		snprintf(cwd, sizeof(cwd), "/proc/%d/cwd", pid);
+		char real_cwd[PATH_MAX];
+		if (readlink(cwd, real_cwd, sizeof(real_cwd)) == -1) return "";
+		return std::filesystem::path(real_cwd) / path;
+	}
+	return std::filesystem::weakly_canonical(path).string();
 }
 
-inline void soft_ban_syscall(pid_t pid, user_regs_struct reg) {
-	reg.REG_SYSCALL += 1024;
-	ptrace(PTRACE_SETREGS, pid, NULL, &reg);
+std::string read_abspath_from_addr(reg_val_t addr, pid_t pid) {
+	return abspath_safe(read_string_from_addr(addr, pid), pid);
 }
 
-inline bool on_dgs_file_detect(pid_t pid, user_regs_struct reg, const string &fn) {
-	if (is_soft_ban_file(fn)) {
-		soft_ban_syscall(pid, reg);
-		return true;
-	} else {
-		return false;
-	}
+std::string read_abspath_from_fd_and_addr(reg_val_t fd, reg_val_t addr, pid_t pid) {
+	std::string path_str = read_string_from_addr(addr, pid);
+	if (path_str.empty()) return "";
+	if (path_str[0] == '/') return abspath_safe(path_str, pid);
+	if ((int)fd == AT_FDCWD) return abspath_safe(path_str, pid);
+
+	char fd_path[64];
+	sprintf(fd_path, "/proc/%d/fd/%llu", pid, fd);
+	char base_path_buf[PATH_MAX];
+	ssize_t len = readlink(fd_path, base_path_buf, sizeof(base_path_buf) - 1);
+	if (len == -1) return "";
+	base_path_buf[len] = '\0';
+	return abspath_safe(std::string(base_path_buf) + "/" + path_str, pid);
 }
 
-inline bool check_safe_syscall(pid_t pid, bool need_show_trace_details) {
-	struct user_regs_struct reg;
-	ptrace(PTRACE_GETREGS, pid, NULL, &reg);
+bool check_file_permission(rp_child_proc *cp, const std::string &fn, char mode,
+                           bool need_show_trace_details) {
+	if (fn.empty()) return true;
+	std::string real_fn = realpath_safe(fn);
+	if (real_fn.empty()) real_fn = fn;
 
-	int cur_instruction = ptrace(PTRACE_PEEKTEXT, pid, reg.rip - 2, NULL) & 0xffff;
-	if (cur_instruction != 0x050f) {
-		if (need_show_trace_details) {
-			fprintf(stderr, "informal syscall  %d\n", cur_instruction);
-		}
-		return false;
+	bool ok = false;
+	switch (mode) {
+		case 'w':
+			ok = is_writable_file(real_fn);
+			break;
+		case 'r':
+			ok = is_readable_file(real_fn);
+			break;
+		case 's':
+			ok = is_statable_file(real_fn);
+			break;
+		default:
+			ok = false;
 	}
+	if (ok) return true;
 
-	int syscall = (int)reg.REG_SYSCALL;
-	if (0 > syscall || syscall >= 1000)  {
-		return false;
-	}
 	if (need_show_trace_details) {
-		fprintf(stderr, "syscall  %d\n", (int)syscall);
+		fprintf(stderr, "Permission denied on '%s' (mode: %c)\n", real_fn.c_str(), mode);
+	}
+	if (is_soft_ban_file(real_fn)) {
+		cp->soft_ban_syscall(EACCES);
+		return true;
+	}
+	return false;
+}
+
+bool check_safe_syscall(rp_child_proc *cp, bool need_show_trace_details) {
+	ptrace(PTRACE_GETREGS, cp->pid, NULL, &cp->reg);
+	cp->syscall = (int)cp->reg.REG_SYSCALL;
+
+	if (cp->syscall < 0 || cp->syscall >= N_SYSCALL) return false;
+	if (need_show_trace_details) fprintf(stderr, "syscall %d\n", cp->syscall);
+
+	cp->try_to_create_new_process =
+	    (cp->syscall == __NR_fork || cp->syscall == __NR_clone || cp->syscall == __NR_vfork);
+
+	auto &cursc = syscall_info_set[cp->syscall];
+	if (cursc.extra_check & ECT_CNT) {
+		if (cursc.max_cnt == 0) {
+			if (cursc.should_soft_ban) {
+				cp->soft_ban_syscall();
+				return true;
+			}
+			return false;
+		}
+		if (cursc.max_cnt > 0) cursc.max_cnt--;
 	}
 
-	if (syscall_should_soft_ban[syscall]) {
-		soft_ban_syscall(pid, reg);
-	} else if (syscall_max_cnt[syscall]-- == 0) {
-		if (need_show_trace_details) {
-			fprintf(stderr, "dgs      %d\n", (int)syscall);
+	if (cursc.extra_check & ECT_FILE_OP) {
+		std::string fn1, fn2;
+		char mode1 = '?', mode2 = '?';
+
+		if (cursc.extra_check & ECT_END_AT)
+			fn1 = read_abspath_from_fd_and_addr(cp->reg.REG_ARG0, cp->reg.REG_ARG1, cp->pid);
+		else
+			fn1 = read_abspath_from_addr(cp->reg.REG_ARG0, cp->pid);
+
+		if (cursc.extra_check & ECT_CHECK_OPEN_FLAGS) {
+			reg_val_t flags =
+			    (cursc.extra_check & ECT_END_AT) ? cp->reg.REG_ARG2 : cp->reg.REG_ARG1;
+			mode1 = 's';
+			if ((flags & O_ACCMODE) == O_RDONLY)
+				mode1 = (flags & (O_CREAT | O_EXCL | O_TRUNC)) == 0 ? 'r' : 'w';
+			else
+				mode1 = 'w';
+		} else if (cursc.extra_check & ECT_FILE_S)
+			mode1 = 's';
+		else if (cursc.extra_check & ECT_FILE_R)
+			mode1 = 'r';
+		else if (cursc.extra_check & ECT_FILE_W)
+			mode1 = 'w';
+
+		if (!check_file_permission(cp, fn1, mode1, need_show_trace_details)) return false;
+
+		if (cursc.extra_check & ECT_FILE2_W) {
+			mode2 = 'w';
+			if (cursc.extra_check & ECT_END_AT)
+				fn2 = read_abspath_from_fd_and_addr(cp->reg.REG_ARG2, cp->reg.REG_ARG3, cp->pid);
+			else
+				fn2 = read_abspath_from_addr(cp->reg.REG_ARG1, cp->pid);
+			if (!check_file_permission(cp, fn2, mode2, need_show_trace_details)) return false;
 		}
-		return false;
 	}
 
-	if (syscall == __NR_open || syscall == __NR_openat) {
-		reg_val_t fn_addr;
-		reg_val_t flags;
-		if (syscall == __NR_open) {
-			fn_addr = reg.REG_ARG0;
-			flags = reg.REG_ARG1;
-		} else {
-			fn_addr = reg.REG_ARG1;
-			flags = reg.REG_ARG2;
-		}
-		string fn = read_abspath_from_regs(fn_addr, pid);
-		if (need_show_trace_details) {
-			fprintf(stderr, "open  ");
-
-			switch (flags & O_ACCMODE) {
-			case O_RDONLY:
-				fprintf(stderr, "r ");
-				break;
-			case O_WRONLY:
-				fprintf(stderr, "w ");
-				break;
-			case O_RDWR:
-				fprintf(stderr, "rw");
-				break;
-			default:
-				fprintf(stderr, "??");
-				break;
-			}
-			fprintf(stderr, " %s\n", fn.c_str());
-		}
-
-		bool is_read_only = (flags & O_ACCMODE) == O_RDONLY &&
-			(flags & O_CREAT) == 0 &&
-			(flags & O_EXCL) == 0 &&
-			(flags & O_TRUNC) == 0;
-		if (is_read_only) {
-			if (realpath(fn) != "" && !is_readable_file(fn)) {
-				return on_dgs_file_detect(pid, reg, fn);
-			}
-		} else {
-			if (!is_writable_file(fn)) {
-				return on_dgs_file_detect(pid, reg, fn);
-			}
-		}
-	} else if (syscall == __NR_readlink || syscall == __NR_readlinkat) {
-		reg_val_t fn_addr;
-		if (syscall == __NR_readlink) {
-			fn_addr = reg.REG_ARG0;
-		} else {
-			fn_addr = reg.REG_ARG1;
-		}
-		string fn = read_abspath_from_regs(fn_addr, pid);
-		if (need_show_trace_details) {
-			fprintf(stderr, "readlink %s\n", fn.c_str());
-		}
-		if (!is_readable_file(fn)) {
-			return on_dgs_file_detect(pid, reg, fn);
-		}
-	} else if (syscall == __NR_unlink || syscall == __NR_unlinkat) {
-		reg_val_t fn_addr;
-		if (syscall == __NR_unlink) {
-			fn_addr = reg.REG_ARG0;
-		} else {
-			fn_addr = reg.REG_ARG1;
-		}
-		string fn = read_abspath_from_regs(fn_addr, pid);
-		if (need_show_trace_details) {
-			fprintf(stderr, "unlink   %s\n", fn.c_str());
-		}
-		if (!is_writable_file(fn)) {
-			return on_dgs_file_detect(pid, reg, fn);
-		}
-	} else if (syscall == __NR_access) {
-		reg_val_t fn_addr = reg.REG_ARG0;
-		string fn = read_abspath_from_regs(fn_addr, pid);
-		if (need_show_trace_details) {
-			fprintf(stderr, "access   %s\n", fn.c_str());
-		}
-		if (!is_statable_file(fn)) {
-			return on_dgs_file_detect(pid, reg, fn);
-		}
-	} else if (syscall == __NR_stat || syscall == __NR_lstat) {
-		reg_val_t fn_addr = reg.REG_ARG0;
-		string fn = read_abspath_from_regs(fn_addr, pid);
-		if (need_show_trace_details) {
-			fprintf(stderr, "stat     %s\n", fn.c_str());
-		}
-		if (!is_statable_file(fn)) {
-			return on_dgs_file_detect(pid, reg, fn);
-		}
-	} else if (syscall == __NR_execve) {
-		reg_val_t fn_addr = reg.REG_ARG0;
-		string fn = read_abspath_from_regs(fn_addr, pid);
-		if (need_show_trace_details) {
-			fprintf(stderr, "execve   %s\n", fn.c_str());
-		}
-		if (!is_readable_file(fn)) {
-			return on_dgs_file_detect(pid, reg, fn);
-		}
-	} else if (syscall == __NR_chmod || syscall == __NR_rename) {
-		reg_val_t fn_addr = reg.REG_ARG0;
-		string fn = read_abspath_from_regs(fn_addr, pid);
-		if (need_show_trace_details) {
-			fprintf(stderr, "change   %s\n", fn.c_str());
-		}
-		if (!is_writable_file(fn)) {
-			return on_dgs_file_detect(pid, reg, fn);
-		}
+	if (cursc.extra_check & ECT_CLONE_THREAD) {
+		reg_val_t flags = cp->reg.REG_ARG0;
+		if (!(flags & CLONE_THREAD && flags & CLONE_VM && flags & CLONE_SIGHAND)) return false;
 	}
 	return true;
 }
 
-inline void on_syscall_exit(pid_t pid, bool need_show_trace_details) {
-	struct user_regs_struct reg;
-	ptrace(PTRACE_GETREGS, pid, NULL, &reg);
-	if (need_show_trace_details) {
-		if ((long long int)reg.REG_SYSCALL >= 1024) {
-			fprintf(stderr, "ban sys  %lld\n", (long long int)reg.REG_SYSCALL - 1024);
-		} else {
-			fprintf(stderr, "exitsys  %lld (ret %d)\n", (long long int)reg.REG_SYSCALL, (int)reg.REG_RET);
+bool set_seccomp_bpf() {
+	scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_TRACE(0));
+	if (!ctx) return false;
+	seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EPERM), SYSCALL_SOFT_BAN_MASK | EPERM, 0);
+	seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EACCES), SYSCALL_SOFT_BAN_MASK | EACCES, 0);
+	seccomp_rule_add(ctx, SCMP_ACT_ERRNO(ENOENT), SYSCALL_SOFT_BAN_MASK | ENOENT, 0);
+	for (int i = 0; i < N_SYSCALL; i++) {
+		if (syscall_info_set[i].extra_check == ECT_NONE) {
+			seccomp_rule_add(ctx, SCMP_ACT_ALLOW, i, 0);
 		}
 	}
-
-	if ((long long int)reg.REG_SYSCALL >= 1024) {
-		reg.REG_SYSCALL -= 1024;
-		reg.REG_RET = -EACCES;
-		ptrace(PTRACE_SETREGS, pid, NULL, &reg);
+	if (seccomp_load(ctx) < 0) {
+		seccomp_release(ctx);
+		return false;
 	}
+	seccomp_release(ctx);
+	return true;
 }

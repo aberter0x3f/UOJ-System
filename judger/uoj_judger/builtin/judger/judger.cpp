@@ -4,10 +4,8 @@ struct SubtaskInfo {
 	bool passed;
 	int score;
 
-	SubtaskInfo() {
-	}
-	SubtaskInfo(const bool &_p, const int &_s)
-		: passed(_p), score(_s){}
+	SubtaskInfo() {}
+	SubtaskInfo(const bool &_p, const int &_s) : passed(_p), score(_s) {}
 };
 
 void ordinary_test() {
@@ -17,7 +15,9 @@ void ordinary_test() {
 
 	if (!conf_is("submit_answer", "on")) {
 		report_judge_status_f("Compiling");
-		RunCompilerResult c_ret = !conf_is("with_implementer", "on") ? compile("answer") : compile_with_implementer("answer");
+		RunCompilerResult c_ret = !conf_is("with_implementer", "on")
+		                              ? compile("answer")
+		                              : compile_with_implementer("answer");
 		if (!c_ret.succeeded) {
 			end_judge_compile_error(c_ret);
 		}
@@ -50,7 +50,7 @@ void ordinary_test() {
 		}
 	} else {
 		map<int, SubtaskInfo> subtasks;
-		map<int,int> minScore;
+		map<int, int> minScore;
 		for (int t = 1; t <= nT; t++) {
 			string subtaskType = conf_str("subtask_type", t, "packed");
 			int startI = conf_int("subtask_end", t - 1, 0) + 1;
@@ -153,7 +153,9 @@ void hack_test() {
 	if (conf_is("submit_answer", "on")) {
 		end_judge_judgement_failed("Hack is not supported in this problem.");
 	} else {
-		RunCompilerResult c_ret = !conf_is("with_implementer", "on") ? compile("answer") : compile_with_implementer("answer");
+		RunCompilerResult c_ret = !conf_is("with_implementer", "on")
+		                              ? compile("answer")
+		                              : compile_with_implementer("answer");
 		if (!c_ret.succeeded) {
 			end_judge_compile_error(c_ret);
 		}
@@ -179,15 +181,13 @@ void sample_test() {
 
 				string usrout = file_preview(tpc.output_file_name);
 				if (usrout == "") {
-					add_point_info(PointInfo(i, 0, -1, -1,
-							"default",
-							file_preview(tpc.input_file_name), usrout,
-							"wrong answer empty file\n"));
+					add_point_info(PointInfo(i, 0, -1, -1, "default",
+					                         file_preview(tpc.input_file_name), usrout,
+					                         "wrong answer empty file\n"));
 				} else {
-					PointInfo po = PointInfo(i, 100, -1, -1,
-							"default",
-							file_preview(tpc.input_file_name), usrout,
-							"ok nonempty file\n");
+					PointInfo po =
+					    PointInfo(i, 100, -1, -1, "default", file_preview(tpc.input_file_name),
+					              usrout, "ok nonempty file\n");
 					po.scr = scale_score(po.scr, conf_int("point_score", i, 100 / n));
 					add_point_info(po);
 				}
@@ -205,7 +205,9 @@ void sample_test() {
 		end_judge_ok();
 	} else {
 		report_judge_status_f("Compiling");
-		RunCompilerResult c_ret = !conf_is("with_implementer", "on") ? compile("answer") : compile_with_implementer("answer");
+		RunCompilerResult c_ret = !conf_is("with_implementer", "on")
+		                              ? compile("answer")
+		                              : compile_with_implementer("answer");
 		if (!c_ret.succeeded) {
 			end_judge_compile_error(c_ret);
 		}
@@ -234,14 +236,16 @@ void custom_test() {
 		end_judge_judgement_failed("Custom test is not supported in this problem.");
 	} else {
 		report_judge_status_f("Compiling");
-		RunCompilerResult c_ret = !conf_is("with_implementer", "on") ? compile("answer") : compile_with_implementer("answer");
+		RunCompilerResult c_ret = !conf_is("with_implementer", "on")
+		                              ? compile("answer")
+		                              : compile_with_implementer("answer");
 		if (!c_ret.succeeded) {
 			end_judge_compile_error(c_ret);
 		}
-		
+
 		report_judge_status_f("Judging");
 		add_custom_test_info(ordinary_custom_test("answer"));
-		
+
 		end_judge_ok();
 	}
 }

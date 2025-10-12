@@ -600,7 +600,13 @@ function require_codemirror(config, callback) {
 function get_codemirror_mode(lang) {
 	switch (lang) {
 		case 'C++':
+		case 'C++98':
 		case 'C++11':
+		case 'C++14':
+		case 'C++17':
+		case 'C++20':
+		case 'C++23':
+		case 'C++26':
 			return 'text/x-c++src';
 		case 'C':
 			return 'text/x-csrc';

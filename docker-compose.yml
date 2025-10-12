@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   uoj-db:
     image: ghcr.io/universaloj/uoj-db:latest
@@ -13,27 +11,12 @@ services:
     environment:
       - MYSQL_DATABASE=app_uoj233
       - MYSQL_ROOT_PASSWORD=root
-  
-  uoj-judger:
-    image: ghcr.io/universaloj/uoj-judger:latest
-    build:
-      context: ./judger/
-      dockerfile: Dockerfile
-    container_name: uoj-judger
-    restart: always
-    stdin_open: true
-    tty: true
-    cap_add:
-      - SYS_PTRACE
-    volumes:
-      - ./uoj_data/judger/log:/opt/uoj_judger/log
-    environment:
-      - UOJ_PROTOCOL=http
-      - UOJ_HOST=uoj-web
-      - JUDGER_NAME=compose_judger
-      - JUDGER_PASSWORD=_judger_password_
-      - SOCKET_PORT=2333
-      - SOCKET_PASSWORD=_judger_socket_password_
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
 
   uoj-web:
     image: ghcr.io/universaloj/uoj-web:latest
@@ -47,8 +30,8 @@ services:
     cap_add:
       - SYS_PTRACE
     depends_on:
-      - uoj-db
-      - uoj-judger
+      uoj-db:
+        condition: service_healthy
     volumes:
       - ./uoj_data/web/data:/var/uoj_data
       - ./uoj_data/web/storage:/opt/uoj/web/app/storage
@@ -56,7 +39,7 @@ services:
         source: ./.config.local.php
         target: /opt/uoj/web/app/.config.php
     ports:
-      - "80:80"
+      - "8080:80"
       - "3690:3690"
     environment:
       - DATABASE_HOST=uoj-db
@@ -68,3 +51,33 @@ services:
       - SALT_2=_salt_2_
       - SALT_3=_salt_3_
       - UOJ_PROTOCOL=http
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+
+  uoj-judger:
+    image: ghcr.io/universaloj/uoj-judger:latest
+    build:
+      context: ./judger/
+      dockerfile: Dockerfile
+    container_name: uoj-judger
+    restart: always
+    stdin_open: true
+    tty: true
+    cap_add:
+      - SYS_PTRACE
+    depends_on:
+      uoj-web:
+        condition: service_healthy
+    volumes:
+      - ./uoj_data/judger/log:/opt/uoj_judger/log
+    environment:
+      - UOJ_PROTOCOL=http
+      - UOJ_HOST=uoj-web
+      - JUDGER_NAME=compose_judger
+      - JUDGER_PASSWORD=_judger_password_
+      - SOCKET_PORT=2333
+      - SOCKET_PASSWORD=_judger_socket_password_

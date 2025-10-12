@@ -1,0 +1,42 @@
+# Generated based on project style and user requirements.
+# Language: C++
+Language: Cpp
+# Based on the LLVM style, but with significant customizations for strictness.
+BasedOnStyle: Google
+
+# ------------------------------------------------------------------------------
+# 缩进与格式化 (Indentation and Formatting)
+# ------------------------------------------------------------------------------
+
+# 核心缩进规则，与 .editorconfig 保持一致
+UseTab: ForIndentation
+IndentWidth: 4
+TabWidth: 4
+ContinuationIndentWidth: 4
+
+# ------------------------------------------------------------------------------
+# 指针、引用和对齐 (Pointers, References, and Alignment)
+# ------------------------------------------------------------------------------
+
+# 根据代码 `const string &arg` 和 `const char *cmd` 的风格
+PointerAlignment: Right
+
+# ------------------------------------------------------------------------------
+# 换行与列宽 (Line Breaking and Column Limit)
+# ------------------------------------------------------------------------------
+
+# 列宽限制
+ColumnLimit: 100
+# 尽可能在赋值操作符 (=, += 等) 之前换行，而不是之后
+BreakBeforeBinaryOperators: NonAssignment
+# 构造函数的初始化列表要么全在一行，要么每个成员一行
+BreakConstructorInitializers: AfterColon
+# 允许在 C++11 的大括号列表 { ... } 中换行
+Cpp11BracedListStyle: true
+
+# ------------------------------------------------------------------------------
+# 其他增强可读性和严格性的选项 (Other Readability/Strictness Options)
+# ------------------------------------------------------------------------------
+
+# 将 public/private/protected 访问修饰符向左缩进
+AccessModifierOffset: -4

@@ -15,7 +15,7 @@ UOJEOF
     #Add judger user
     adduser judger --gecos "" --disabled-password
     #Set uoj_data path
-    mkdir /var/uoj_data_copy && chown judger /var/uoj_data_copy
+    mkdir /var/uoj_data_copy && chown judger:judger /var/uoj_data_copy
     #Compile uoj_judger and set runtime
     chown -R judger:judger /opt/uoj_judger
     su judger <<EOD
@@ -23,9 +23,8 @@ ln -s /var/uoj_data_copy /opt/uoj_judger/uoj_judger/data
 cd /opt/uoj_judger && chmod +x judge_client
 cat >uoj_judger/include/uoj_work_path.h <<UOJEOF
 #define UOJ_WORK_PATH "/opt/uoj_judger/uoj_judger"
-#define UOJ_JUDGER_BASESYSTEM_UBUNTU1804
-#define UOJ_JUDGER_PYTHON3_VERSION "3.8"
-#define UOJ_JUDGER_FPC_VERSION "3.0.4"
+#define UOJ_JUDGER_PYTHON3_VERSION "3.12"
+#define UOJ_JUDGER_FPC_VERSION "3.2.2"
 UOJEOF
 cd uoj_judger && make -j$(($(nproc) + 1))
 EOD
@@ -48,10 +47,10 @@ initProgress(){
     "socket_password": "$SOCKET_PASSWORD"
 }
 UOJEOF
-        chmod 600 .conf.json && chown judger .conf.json
+        chmod 600 .conf.json && chown judger:judger .conf.json
         chown -R judger:judger ./log
         #Start services
-        service ntp restart
+        service ntpd restart
         su judger -c '/opt/uoj_judger/judge_client start'
         echo "please modify the database after getting the judger server ready:"
         echo "insert into judger_info (judger_name, password, ip) values ('$JUDGER_NAME', '$JUDGER_PASSWORD', '__judger_ip_here__');"
@@ -68,7 +67,7 @@ dockerPrep(){
 if [ ! -f \"/opt/uoj_judger/.conf.json\" ]; then
   cd /opt/uoj_judger && sh install.sh -i
 fi
-service ntp start
+service ntpd start
 su judger -c \"/opt/uoj_judger/judge_client start\"
 exec bash" >/opt/up
     chmod +x /opt/up

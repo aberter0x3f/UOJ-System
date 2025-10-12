@@ -1,5 +1,5 @@
 INCLUDE_PATH = include
-CXXFLAGS = -I./include -O2
+CXXFLAGS = -I./include -O2 -std=c++17
 
 EXE_CHECKER = \
 	builtin/checker/bcmp \
@@ -35,10 +35,11 @@ checker: $(EXE_CHECKER)
 % : %.cpp
 	$(CXX) $(CXXFLAGS) $(EXTRA_CXXFLAGS) $< -o $@
 
-run/run_program: include/uoj_env.h run/run_program_conf.h
+run/run_program: run/run_program.cpp run/run_program_conf.h include/uoj_env.h run/run_program_conf.h
+	$(CXX) $(CXXFLAGS) $< -o $@ -lseccomp -pthread
 run/formatter  : include/testlib.h
 run/run_interaction: run/run_interaction.cpp include/uoj_env.h
-	$(CXX) $(CXXFLAGS) --std=c++11 -pthread $< -o $@
+	$(CXX) $(CXXFLAGS) -pthread $< -o $@
 
 builtin/judger/judger: include
 main_judger: include

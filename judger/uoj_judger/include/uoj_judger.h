@@ -1,27 +1,28 @@
-#include <iostream>
-#include <algorithm>
-#include <sstream>
-#include <fstream>
-#include <vector>
-#include <set>
-#include <map>
-#include <cstdio>
-#include <cstdlib>
-#include <climits>
-#include <cmath>
-#include <cstdlib>
-#include <ctime>
-#include <cstring>
-#include <string>
-#include <cstdarg>
-#include <locale>
-#include <codecvt>
+#pragma once
 
-#include <unistd.h>
 #include <sys/file.h>
 #include <sys/wait.h>
+#include <unistd.h>
+
+#include <algorithm>
+#include <climits>
+#include <cmath>
+#include <codecvt>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <fstream>
+#include <iostream>
+#include <locale>
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "uoj_env.h"
+
 using namespace std;
 
 /*========================== execute ====================== */
@@ -47,10 +48,7 @@ string realpath(const string &path) {
 	return real;
 }
 
-
-int execute(const char *cmd) {
-	return system(cmd);
-}
+int execute(const char *cmd) { return system(cmd); }
 
 int executef(const char *fmt, ...) {
 	const int MaxL = 512;
@@ -72,8 +70,7 @@ int executef(const char *fmt, ...) {
 
 string file_preview(const string &name, const size_t &len = 100) {
 	std::wifstream f(name);
-	if (!f)
-		return "";
+	if (!f) return "";
 	f.imbue(std::locale("C.UTF-8"));
 
 	std::vector<wchar_t> buf(len + 5, 0);
@@ -82,10 +79,9 @@ string file_preview(const string &name, const size_t &len = 100) {
 	auto it = std::find(buf.begin(), buf.end(), 0);
 	if (it - buf.begin() > len + 3) {
 		buf.resize(len);
-		for (wchar_t c: "...")
-			buf.push_back(c);
+		for (wchar_t c : "...") buf.push_back(c);
 	}
-	
+
 	std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> cv;
 	return cv.to_bytes(&buf[0]);
 }
@@ -96,11 +92,9 @@ void file_hide_token(const string &name, const string &token) {
 	FILE *rf = fopen((name + ".bak").c_str(), "r");
 	FILE *wf = fopen(name.c_str(), "w");
 	int c;
-	for (int i = 0; i <= (int)token.length(); i++)
-	{
+	for (int i = 0; i <= (int)token.length(); i++) {
 		c = fgetc(rf);
-		if (c != (i < (int)token.length() ? token[i] : '\n'))
-		{
+		if (c != (i < (int)token.length() ? token[i] : '\n')) {
 			fprintf(wf, "Unauthorized output\n");
 			fclose(rf);
 			fclose(wf);
@@ -124,33 +118,28 @@ struct RunLimit {
 	int memory;
 	int output;
 
-	RunLimit() {
-	}
-	RunLimit(const int &_time, const int &_memory, const int &_output)
-			: time(_time), memory(_memory), output(_output), real_time(-1) {
-	}
+	RunLimit() {}
+	RunLimit(const int &_time, const int &_memory, const int &_output) :
+	    time(_time), memory(_memory), output(_output), real_time(-1) {}
 };
 
 const RunLimit RL_DEFAULT = RunLimit(1, 256, 64);
-const RunLimit RL_JUDGER_DEFAULT = RunLimit(600, 1024, 128);
+const RunLimit RL_JUDGER_DEFAULT = RunLimit(600, 2048, 128);
 const RunLimit RL_CHECKER_DEFAULT = RunLimit(5, 256, 64);
 const RunLimit RL_INTERACTOR_DEFAULT = RunLimit(1, 256, 64);
 const RunLimit RL_VALIDATOR_DEFAULT = RunLimit(5, 256, 64);
 const RunLimit RL_MARKER_DEFAULT = RunLimit(5, 256, 64);
-const RunLimit RL_COMPILER_DEFAULT = RunLimit(15, 512, 64);
+const RunLimit RL_COMPILER_DEFAULT = RunLimit(15, 2048, 64);
 
-struct PointInfo  {
+struct PointInfo {
 	int num;
 	int scr;
 	int ust, usm;
 	string info, in, out, res;
 
-	PointInfo(const int &_num, const int &_scr,
-			const int &_ust, const int &_usm, const string &_info,
-			const string &_in, const string &_out, const string &_res)
-			: num(_num), scr(_scr),
-			ust(_ust), usm(_usm), info(_info),
-			in(_in), out(_out), res(_res) {
+	PointInfo(const int &_num, const int &_scr, const int &_ust, const int &_usm,
+	          const string &_info, const string &_in, const string &_out, const string &_res) :
+	    num(_num), scr(_scr), ust(_ust), usm(_usm), info(_info), in(_in), out(_out), res(_res) {
 		if (info == "default") {
 			if (scr == 0) {
 				info = "Wrong Answer";
@@ -163,15 +152,13 @@ struct PointInfo  {
 	}
 };
 
-struct CustomTestInfo  {
+struct CustomTestInfo {
 	int ust, usm;
 	string info, exp, out;
 
-	CustomTestInfo(const int &_ust, const int &_usm, const string &_info,
-			const string &_exp, const string &_out)
-			: ust(_ust), usm(_usm), info(_info),
-			exp(_exp), out(_out) {
-	}
+	CustomTestInfo(const int &_ust, const int &_usm, const string &_info, const string &_exp,
+	               const string &_out) :
+	    ust(_ust), usm(_usm), info(_info), exp(_exp), out(_out) {}
 };
 
 struct RunResult {
@@ -190,7 +177,8 @@ struct RunResult {
 	static RunResult from_file(const string &file_name) {
 		RunResult res;
 		FILE *fres = fopen(file_name.c_str(), "r");
-		if (fres == NULL || fscanf(fres, "%d %d %d %d", &res.type, &res.ust, &res.usm, &res.exit_code) != 4) {
+		if (fres == NULL
+		    || fscanf(fres, "%d %d %d %d", &res.type, &res.ust, &res.usm, &res.exit_code) != 4) {
 			return RunResult::failed_result();
 		}
 		fclose(fres);
@@ -234,7 +222,7 @@ struct RunCheckerResult {
 		res.info = file_preview(file_name);
 		return res;
 	}
-	
+
 	static RunCheckerResult failed_result() {
 		RunCheckerResult res;
 		res.type = RS_JGF;
@@ -250,7 +238,7 @@ struct RunValidatorResult {
 	int ust, usm;
 	bool succeeded;
 	string info;
-	
+
 	static RunValidatorResult failed_result() {
 		RunValidatorResult res;
 		res.type = RS_JGF;
@@ -280,8 +268,8 @@ struct RunCompilerResult {
 
 // see also: run_simple_interaction
 struct RunSimpleInteractionResult {
-	RunResult res; // prog
-	RunCheckerResult ires; // interactor
+	RunResult res;          // prog
+	RunCheckerResult ires;  // interactor
 };
 
 int problem_id;
@@ -290,11 +278,11 @@ string work_path;
 string data_path;
 string result_path;
 
-int tot_time   = 0;
+int tot_time = 0;
 int max_memory = 0;
-int tot_score  = 0;
+int tot_score = 0;
 ostringstream details_out;
-//vector<PointInfo> points_info;
+// vector<PointInfo> points_info;
 map<string, string> config;
 
 /*==================== parameter End ================== */
@@ -331,9 +319,7 @@ string conf_str(const string &key, const string &val) {
 	}
 	return config[key];
 }
-string conf_str(const string &key) {
-	return conf_str(key, "");
-}
+string conf_str(const string &key) { return conf_str(key, ""); }
 int conf_int(const string &key, const int &val) {
 	if (config.count(key) == 0) {
 		return val;
@@ -348,9 +334,7 @@ int conf_int(const string &key, int num, const int &val) {
 	}
 	return atoi(config[sout.str()].c_str());
 }
-int conf_int(const string &key)  {
-	return conf_int(key, 0);
-}
+int conf_int(const string &key) { return conf_int(key, 0); }
 string conf_input_file_name(int num) {
 	ostringstream name;
 	if (num < 0) {
@@ -380,15 +364,13 @@ RunLimit conf_run_limit(string pre, const int &num, const RunLimit &val) {
 RunLimit conf_run_limit(const int &num, const RunLimit &val) {
 	return conf_run_limit("", num, val);
 }
-void conf_add(const string &key, const string &val)  {
-	if (config.count(key))  return;
+void conf_add(const string &key, const string &val) {
+	if (config.count(key)) return;
 	config[key] = val;
 }
-bool conf_has(const string &key)  {
-	return config.count(key) != 0;
-}
-bool conf_is(const string &key, const string &val)  {
-	if (config.count(key) == 0)  return false;
+bool conf_has(const string &key) { return config.count(key) != 0; }
+bool conf_is(const string &key, const string &val) {
+	if (config.count(key) == 0) return false;
 	return config[key] == val;
 }
 
@@ -407,38 +389,55 @@ inline string htmlspecialchars(const string &s) {
 	string r;
 	for (int i = 0; i < (int)s.length(); i++) {
 		switch (s[i]) {
-		case '&' : r += "&amp;"; break;
-		case '<' : r += "&lt;"; break;
-		case '>' : r += "&gt;"; break;
-		case '"' : r += "&quot;"; break;
-		case '\0': r += "<b>\\0</b>"; break;
-		default  : r += s[i]; break;
+			case '&':
+				r += "&amp;";
+				break;
+			case '<':
+				r += "&lt;";
+				break;
+			case '>':
+				r += "&gt;";
+				break;
+			case '"':
+				r += "&quot;";
+				break;
+			case '\0':
+				r += "<b>\\0</b>";
+				break;
+			default:
+				r += s[i];
+				break;
 		}
 	}
 	return r;
 }
 
-inline string info_str(int id)  {
+inline string info_str(int id) {
 	switch (id) {
-	case RS_MLE: return "Memory Limit Exceeded";
-	case RS_TLE: return "Time Limit Exceeded";
-	case RS_OLE: return "Output Limit Exceeded";
-	case RS_RE : return "Runtime Error";
-	case RS_DGS: return "Dangerous Syscalls";
-	case RS_JGF: return "Judgement Failed";
-	default    : return "Unknown Result";
+		case RS_MLE:
+			return "Memory Limit Exceeded";
+		case RS_TLE:
+			return "Time Limit Exceeded";
+		case RS_OLE:
+			return "Output Limit Exceeded";
+		case RS_RE:
+			return "Runtime Error";
+		case RS_DGS:
+			return "Dangerous Syscalls";
+		case RS_JGF:
+			return "Judgement Failed";
+		default:
+			return "Unknown Result";
 	}
 }
-inline string info_str(const RunResult &p)  {
-	return info_str(p.type);
-}
+inline string info_str(const RunResult &p) { return info_str(p.type); }
 
 void add_point_info(const PointInfo &info, bool update_tot_score = true) {
 	if (info.num >= 0) {
-		if(info.ust >= 0) {
+		if (info.ust >= 0) {
 			tot_time += info.ust;
 		}
-		if(info.usm >= 0) {
+		if (info.usm >= 0) {
 			max_memory = max(max_memory, info.usm);
 		}
 	}
@@ -447,10 +446,10 @@ void add_point_info(const PointInfo &info, bool update_tot_score = true) {
 	}
 
 	details_out << "<test num=\"" << info.num << "\""
-		<< " score=\"" << info.scr << "\""
-		<< " info=\"" << htmlspecialchars(info.info) << "\""
-		<< " time=\"" << info.ust << "\""
-		<< " memory=\"" << info.usm << "\">" << endl;
+	            << " score=\"" << info.scr << "\""
+	            << " info=\"" << htmlspecialchars(info.info) << "\""
+	            << " time=\"" << info.ust << "\""
+	            << " memory=\"" << info.usm << "\">" << endl;
 	if (conf_str("show_in", "on") == "on") {
 		details_out << "<in>" << htmlspecialchars(info.in) << "</in>" << endl;
 	}
@@ -463,26 +462,27 @@ void add_point_info(const PointInfo &info, bool update_tot_score = true) {
 	details_out << "</test>" << endl;
 }
 void add_custom_test_info(const CustomTestInfo &info) {
-	if(info.ust >= 0) {
+	if (info.ust >= 0) {
 		tot_time += info.ust;
 	}
-	if(info.usm >= 0) {
+	if (info.usm >= 0) {
 		max_memory = max(max_memory, info.usm);
 	}
 
 	details_out << "<custom-test info=\"" << htmlspecialchars(info.info) << "\""
-		<< " time=\"" << info.ust << "\""
-		<< " memory=\"" << info.usm << "\">" << endl;
+	            << " time=\"" << info.ust << "\""
+	            << " memory=\"" << info.usm << "\">" << endl;
 	if (!info.exp.empty()) {
 		details_out << info.exp << endl;
 	}
 	details_out << "<out>" << htmlspecialchars(info.out) << "</out>" << endl;
 	details_out << "</custom-test>" << endl;
 }
-void add_subtask_info(const int &num, const int &scr, const string &info, const vector<PointInfo> &points) {
+void add_subtask_info(const int &num, const int &scr, const string &info,
+                      const vector<PointInfo> &points) {
 	details_out << "<subtask num=\"" << num << "\""
-		<< " score=\"" << scr << "\""
-		<< " info=\"" << htmlspecialchars(info) << "\">" << endl;
+	            << " score=\"" << scr << "\""
+	            << " info=\"" << htmlspecialchars(info) << "\">" << endl;
 	tot_score += scr;
 	for (vector<PointInfo>::const_iterator it = points.begin(); it != points.end(); it++) {
 		add_point_info(*it, false);
@@ -551,7 +551,7 @@ bool report_judge_status_f(const char *fmt, ...) {
 /*========================== run ====================== */
 
 struct RunProgramConfig {
-	vector<string> readable_file_names; // other than stdin
+	vector<string> readable_file_names;  // other than stdin
 	string result_file_name;
 	string input_file_name;
 	string output_file_name;
@@ -571,7 +571,8 @@ struct RunProgramConfig {
 		type = "default";
 		work_path = ::work_path;
 
-		for (vector<string>::iterator it = readable_file_names.begin(); it != readable_file_names.end(); it++) {
+		for (vector<string>::iterator it = readable_file_names.begin();
+		     it != readable_file_names.end(); it++) {
 			if (!it->empty() && (*it)[0] != '/') {
 				*it = ::work_path + "/" + *it;
 			}
@@ -611,17 +612,16 @@ struct RunProgramConfig {
 	string get_cmd() const {
 		ostringstream sout;
 		sout << main_path << "/run/run_program"
-			<< " " << "--res=" << escapeshellarg(result_file_name)
-			<< " " << "--in=" << escapeshellarg(input_file_name)
-			<< " " <<"--out=" << escapeshellarg(output_file_name)
-			<< " " << "--err=" << escapeshellarg(error_file_name)
-			<< " " << "--tl=" << limit.time
-			<< " " << "--ml=" << limit.memory
-			<< " " << "--ol=" << limit.output
-			<< " " << "--type=" << type
-			<< " " << "--work-path=" << work_path
-			/*<< " " << "--show-trace-details"*/;
-		for (vector<string>::const_iterator it = readable_file_names.begin(); it != readable_file_names.end(); it++) {
+		     << " " << "--res=" << escapeshellarg(result_file_name) << " "
+		     << "--in=" << escapeshellarg(input_file_name) << " "
+		     << "--out=" << escapeshellarg(output_file_name) << " "
+		     << "--err=" << escapeshellarg(error_file_name) << " "
+		     << "--tl=" << limit.time << " " << "--ml=" << limit.memory << " "
+		     << "--ol=" << limit.output << " " << "--type=" << type << " "
+		     << "--work-path=" << work_path
+		    /*<< " " << "--show-trace-details"*/;
+		for (vector<string>::const_iterator it = readable_file_names.begin();
+		     it != readable_file_names.end(); it++) {
 			sout << " " << "--add-readable=" << escapeshellarg(*it);
 		}
 		for (vector<string>::const_iterator it = argv.begin(); it != argv.end(); it++) {
@@ -637,11 +637,13 @@ struct PipeConfig {
 
 	string saving_file_name;
 
-	PipeConfig() {
-	}
-	PipeConfig(int _from, int _from_fd, int _to, int _to_fd, const string &_saving_file_name = "")
-			: from(_from), from_fd(_from_fd), to(_to), to_fd(_to_fd), saving_file_name(_saving_file_name) {
-	}
+	PipeConfig() {}
+	PipeConfig(int _from, int _from_fd, int _to, int _to_fd, const string &_saving_file_name = "") :
+	    from(_from),
+	    from_fd(_from_fd),
+	    to(_to),
+	    to_fd(_to_fd),
+	    saving_file_name(_saving_file_name) {}
 };
 struct RunInteractionConfig {
 	vector<string> cmds;
@@ -669,28 +671,25 @@ struct RunInteractionConfig {
 
 // @deprecated
 // will be removed in the future
-RunResult vrun_program(
-		const char *run_program_result_file_name,
-		const char *input_file_name,
-		const char *output_file_name,
-		const char *error_file_name,
-		const RunLimit &limit,
-		const vector<string> &rest) {
+RunResult vrun_program(const char *run_program_result_file_name, const char *input_file_name,
+                       const char *output_file_name, const char *error_file_name,
+                       const RunLimit &limit, const vector<string> &rest) {
 	ostringstream sout;
 	sout << main_path << "/run/run_program"
-		<< " " << "--res=" << escapeshellarg(run_program_result_file_name)
-		<< " " << "--in=" << escapeshellarg(input_file_name)
-		<< " " <<"--out=" << escapeshellarg(output_file_name)
-		<< " " << "--err=" << escapeshellarg(error_file_name)
-		<< " " << "--tl=" << limit.time
-		<< " " << "--ml=" << limit.memory
-		<< " " << "--ol=" << limit.output
-		/*<< " " << "--show-trace-details"*/;
+	     << " " << "--res=" << escapeshellarg(run_program_result_file_name) << " "
+	     << "--in=" << escapeshellarg(input_file_name) << " "
+	     << "--out=" << escapeshellarg(output_file_name) << " "
+	     << "--err=" << escapeshellarg(error_file_name) << " "
+	     << "--tl=" << limit.time << " " << "--ml=" << limit.memory << " "
+	     << "--ol=" << limit.output << " " << "--show-trace-details";
+	/*<< " " << "--show-trace-details"*/;
 	for (vector<string>::const_iterator it = rest.begin(); it != rest.end(); it++) {
 		sout << " " << escapeshellarg(*it);
 	}
 
-	if (execute(sout.str().c_str()) != 0) {
+	std::string command = sout.str();
+
+	if (execute(command.c_str()) != 0) {
 		return RunResult::failed_result();
 	}
 	return RunResult::from_file(run_program_result_file_name);
@@ -704,16 +703,11 @@ RunResult run_program(const RunProgramConfig &rpc) {
 }
 
 // @return interaction return value
-int run_interaction(const RunInteractionConfig &ric) {
-	return execute(ric.get_cmd().c_str());
-}
+int run_interaction(const RunInteractionConfig &ric) { return execute(ric.get_cmd().c_str()); }
 
-RunResult run_program(
-		const char *run_program_result_file_name,
-		const char *input_file_name,
-		const char *output_file_name,
-		const char *error_file_name,
-		const RunLimit &limit, ...) {
+RunResult run_program(const char *run_program_result_file_name, const char *input_file_name,
+                      const char *output_file_name, const char *error_file_name,
+                      const RunLimit &limit, ...) {
 	vector<string> argv;
 	va_list vl;
 	va_start(vl, limit);
@@ -721,26 +715,16 @@ RunResult run_program(
 		argv.push_back(arg);
 	}
 	va_end(vl);
-	return vrun_program(run_program_result_file_name,
-			input_file_name,
-			output_file_name,
-			error_file_name,
-			limit,
-			argv);
+	return vrun_program(run_program_result_file_name, input_file_name, output_file_name,
+	                    error_file_name, limit, argv);
 }
 
-RunValidatorResult run_validator(
-		const string &input_file_name,
-		const RunLimit &limit,
-		const string &program_name) {
-	RunResult ret = run_program(
-			(string(result_path) + "/run_validator_result.txt").c_str(),
-			input_file_name.c_str(),
-			"/dev/null",
-			(string(result_path) + "/validator_error.txt").c_str(),
-			limit,
-			program_name.c_str(),
-			NULL);
+RunValidatorResult run_validator(const string &input_file_name, const RunLimit &limit,
+                                 const string &program_name) {
+	RunResult ret = run_program((string(result_path) + "/run_validator_result.txt").c_str(),
+	                            input_file_name.c_str(), "/dev/null",
+	                            (string(result_path) + "/validator_error.txt").c_str(), limit,
+	                            program_name.c_str(), NULL);
 
 	RunValidatorResult res;
 	res.type = ret.type;
@@ -755,26 +739,17 @@ RunValidatorResult run_validator(
 	}
 	return res;
 }
-RunCheckerResult run_checker(
-		const RunLimit &limit,
-		const string &program_name,
-		const string &input_file_name,
-		const string &output_file_name,
-		const string &answer_file_name) {
-	RunResult ret = run_program(
-			(string(result_path) + "/run_checker_result.txt").c_str(),
-			"/dev/null",
-			"/dev/null",
-			(string(result_path) + "/checker_error.txt").c_str(),
-			limit,
-			("--add-readable=" + input_file_name).c_str(),
-			("--add-readable=" + output_file_name).c_str(),
-			("--add-readable=" + answer_file_name).c_str(),
-			program_name.c_str(),
-			realpath(input_file_name).c_str(),
-			realpath(output_file_name).c_str(),
-			realpath(answer_file_name).c_str(),
-			NULL);
+RunCheckerResult run_checker(const RunLimit &limit, const string &program_name,
+                             const string &input_file_name, const string &output_file_name,
+                             const string &answer_file_name) {
+	RunResult ret =
+	    run_program((string(result_path) + "/run_checker_result.txt").c_str(), "/dev/null",
+	                "/dev/null", (string(result_path) + "/checker_error.txt").c_str(), limit,
+	                ("--add-readable=" + input_file_name).c_str(),
+	                ("--add-readable=" + output_file_name).c_str(),
+	                ("--add-readable=" + answer_file_name).c_str(), program_name.c_str(),
+	                realpath(input_file_name).c_str(), realpath(output_file_name).c_str(),
+	                realpath(answer_file_name).c_str(), NULL);
 
 	return RunCheckerResult::from_file(result_path + "/checker_error.txt", ret);
 }
@@ -790,17 +765,13 @@ RunCompilerResult run_compiler(const char *path, ...) {
 	}
 	va_end(vl);
 
-	RunResult ret = vrun_program(
-			(result_path + "/run_compiler_result.txt").c_str(),
-			"/dev/null",
-			"stderr",
-			(result_path + "/compiler_result.txt").c_str(),
-			RL_COMPILER_DEFAULT,
-			argv);
+	RunResult ret =
+	    vrun_program((result_path + "/run_compiler_result.txt").c_str(), "/dev/null", "stderr",
+	                 (result_path + "/compiler_result.txt").c_str(), RL_COMPILER_DEFAULT, argv);
 	RunCompilerResult res;
 	res.type = ret.type;
 	res.ust = ret.ust;
-	res.usm = ret.usm; 
+	res.usm = ret.usm;
 	res.succeeded = ret.type == RS_AC && ret.exit_code == 0;
 	if (!res.succeeded) {
 		if (ret.type == RS_AC) {
@@ -814,12 +785,9 @@ RunCompilerResult run_compiler(const char *path, ...) {
 	return res;
 }
 
-RunResult run_submission_program(
-		const string &input_file_name,
-		const string &output_file_name,
-		const RunLimit &limit,
-		const string &name,
-		RunProgramConfig rpc = RunProgramConfig()) {
+RunResult run_submission_program(const string &input_file_name, const string &output_file_name,
+                                 const RunLimit &limit, const string &name,
+                                 RunProgramConfig rpc = RunProgramConfig()) {
 	rpc.result_file_name = result_path + "/run_submission_program.txt";
 	rpc.input_file_name = input_file_name;
 	rpc.output_file_name = output_file_name;
@@ -848,15 +816,10 @@ void prepare_interactor() {
 
 // simple: prog <---> interactor <---> data
 RunSimpleInteractionResult run_simple_interation(
-		const string &input_file_name,
-		const string &answer_file_name,
-		const string &real_input_file_name,
-		const string &real_output_file_name,
-		const RunLimit &limit,
-		const RunLimit &ilimit,
-		const string &name,
-		RunProgramConfig rpc = RunProgramConfig(),
-		RunProgramConfig irpc = RunProgramConfig()) {
+    const string &input_file_name, const string &answer_file_name,
+    const string &real_input_file_name, const string &real_output_file_name, const RunLimit &limit,
+    const RunLimit &ilimit, const string &name, RunProgramConfig rpc = RunProgramConfig(),
+    RunProgramConfig irpc = RunProgramConfig()) {
 	prepare_interactor();
 
 	rpc.result_file_name = result_path + "/run_submission_program.txt";
@@ -887,12 +850,13 @@ RunSimpleInteractionResult run_simple_interation(
 	// from:fd, to:fd
 	ric.pipes.push_back(PipeConfig(2, 1, 1, 0, real_input_file_name));
 	ric.pipes.push_back(PipeConfig(1, 1, 2, 0, real_output_file_name));
-	
+
 	run_interaction(ric);
 
 	RunSimpleInteractionResult rires;
 	RunResult res = RunResult::from_file(rpc.result_file_name);
-	RunCheckerResult ires = RunCheckerResult::from_file(irpc.error_file_name, RunResult::from_file(irpc.result_file_name));
+	RunCheckerResult ires = RunCheckerResult::from_file(
+	    irpc.error_file_name, RunResult::from_file(irpc.result_file_name));
 
 	if (res.type == RS_AC && res.exit_code != 0) {
 		res.type = RS_RE;
@@ -925,19 +889,11 @@ void prepare_run_standard_program() {
 
 // @deprecated
 // will be removed in the future
-RunResult run_standard_program(
-		const string &input_file_name,
-		const string &output_file_name,
-		const RunLimit &limit,
-		RunProgramConfig rpc = RunProgramConfig()) {
+RunResult run_standard_program(const string &input_file_name, const string &output_file_name,
+                               const RunLimit &limit, RunProgramConfig rpc = RunProgramConfig()) {
 	prepare_run_standard_program();
 	rpc.result_file_name = result_path + "/run_standard_program.txt";
-	return run_submission_program(
-			input_file_name,
-			output_file_name,
-			limit,
-			"std",
-			rpc);
+	return run_submission_program(input_file_name, output_file_name, limit, "std", rpc);
 }
 
 /*======================== run End ==================== */
@@ -945,8 +901,7 @@ RunResult run_standard_program(
 /*======================== compile ==================== */
 
 bool is_illegal_keyword(const string &name) {
-	if (name == "__asm" || name == "__asm__" || name == "asm")
-		return true;
+	if (name == "__asm" || name == "__asm__" || name == "asm") return true;
 	return false;
 }
 
@@ -955,29 +910,22 @@ bool has_illegal_keywords_in_file(const string &name) {
 
 	int c;
 	string key;
-	while ((c = fgetc(f)) != EOF)
-	{
-		if (('0' <= c && c <= '9') || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_')
-		{
+	while ((c = fgetc(f)) != EOF) {
+		if (('0' <= c && c <= '9') || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
+		    || c == '_') {
 			if (key.size() < 20)
 				key += c;
-			else
-			{
-				if (is_illegal_keyword(key))
-					return true;
+			else {
+				if (is_illegal_keyword(key)) return true;
 				key.erase(key.begin());
 				key += c;
 			}
-		}
-		else
-		{
-			if (is_illegal_keyword(key))
-				return true;
+		} else {
+			if (is_illegal_keyword(key)) return true;
 			key.clear();
 		}
 	}
-	if (is_illegal_keyword(key))
-		return true;
+	if (is_illegal_keyword(key)) return true;
 	fclose(f);
 	return false;
 }
@@ -1079,10 +1027,8 @@ RunCompilerResult prepare_java_source(const string &name, const string &path = w
 
 	bool valid[256];
 	fill(valid, valid + 256, false);
-	for (int c = 'a'; c <= 'z'; c++)
-		valid[c] = true;
-	for (int c = 'A'; c <= 'Z'; c++)
-		valid[c] = true;
+	for (int c = 'a'; c <= 'z'; c++) valid[c] = true;
+	for (int c = 'A'; c <= 'Z'; c++) valid[c] = true;
 	valid['.'] = true;
 	valid['_'] = true;
 
@@ -1140,62 +1086,102 @@ RunCompilerResult prepare_java_source(const string &name, const string &path = w
 }
 
 RunCompilerResult compile_c(const string &name, const string &path = work_path) {
-	return run_compiler(path.c_str(), 
-			"/usr/bin/gcc", "-o", name.c_str(), "-x", "c", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", NULL);
+	return run_compiler(path.c_str(), "/usr/bin/gcc", "-o", name.c_str(), "-x", "c",
+	                    (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", NULL);
 }
 RunCompilerResult compile_pas(const string &name, const string &path = work_path) {
-	return run_compiler(path.c_str(),
-			"/usr/bin/fpc", (name + ".code").c_str(), "-O2", NULL);
+	return run_compiler(path.c_str(), "/usr/bin/fpc", (name + ".code").c_str(), "-O2", NULL);
 }
 RunCompilerResult compile_cpp(const string &name, const string &path = work_path) {
-	return run_compiler(path.c_str(),
-			"/usr/bin/g++", "-o", name.c_str(), "-x", "c++", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", NULL);
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "-x", "c++",
+	                    (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", NULL);
+}
+RunCompilerResult compile_cpp98(const string &name, const string &path = work_path) {
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "-x", "c++",
+	                    (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", "-std=c++98",
+	                    NULL);
 }
 RunCompilerResult compile_cpp11(const string &name, const string &path = work_path) {
-	return run_compiler(path.c_str(),
-			"/usr/bin/g++", "-o", name.c_str(), "-x", "c++", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", "-std=c++11", NULL);
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "-x", "c++",
+	                    (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", "-std=c++11",
+	                    NULL);
+}
+RunCompilerResult compile_cpp14(const string &name, const string &path = work_path) {
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "-x", "c++",
+	                    (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", "-std=c++14",
+	                    NULL);
+}
+RunCompilerResult compile_cpp17(const string &name, const string &path = work_path) {
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "-x", "c++",
+	                    (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", "-std=c++17",
+	                    NULL);
+}
+RunCompilerResult compile_cpp20(const string &name, const string &path = work_path) {
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "-x", "c++",
+	                    (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", "-std=c++20",
+	                    NULL);
+}
+RunCompilerResult compile_cpp23(const string &name, const string &path = work_path) {
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "-x", "c++",
+	                    (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", "-std=c++23",
+	                    NULL);
+}
+RunCompilerResult compile_cpp26(const string &name, const string &path = work_path) {
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "-x", "c++",
+	                    (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", "-std=c++26",
+	                    NULL);
 }
 RunCompilerResult compile_python2(const string &name, const string &path = work_path) {
-	return run_compiler(path.c_str(),
-			"/usr/bin/python2", "-E", "-s", "-B", "-O", "-c",
-			("import py_compile\nimport sys\ntry:\n    py_compile.compile('" + name + ".code'" + ", '" + name + "', doraise=True)\n    sys.exit(0)\nexcept Exception as e:\n    print e\n    sys.exit(1)").c_str(), NULL);
+	return run_compiler(path.c_str(), "/usr/bin/python2", "-E", "-s", "-B", "-O", "-c",
+	                    ("import py_compile\nimport sys\ntry:\n    py_compile.compile('" + name
+	                     + ".code'" + ", '" + name
+	                     + "', doraise=True)\n    sys.exit(0)\nexcept Exception as e:\n    print "
+	                       "e\n    sys.exit(1)")
+	                        .c_str(),
+	                    NULL);
 }
 RunCompilerResult compile_python3(const string &name, const string &path = work_path) {
-	return run_compiler(path.c_str(),
-			"/usr/bin/python3", "-I", "-B", "-O", "-c", ("import py_compile\nimport sys\ntry:\n    py_compile.compile('" + name + ".code'" + ", '" + name + "', doraise=True)\n    sys.exit(0)\nexcept Exception as e:\n    print(e)\n    sys.exit(1)").c_str(), NULL);
+	return run_compiler(path.c_str(), "/usr/bin/python3", "-I", "-B", "-O", "-c",
+	                    ("import py_compile\nimport sys\ntry:\n    py_compile.compile('" + name
+	                     + ".code'" + ", '" + name
+	                     + "', doraise=True)\n    sys.exit(0)\nexcept Exception as e:\n    "
+	                       "print(e)\n    sys.exit(1)")
+	                        .c_str(),
+	                    NULL);
 }
 RunCompilerResult compile_java8(const string &name, const string &path = work_path) {
 	RunCompilerResult ret = prepare_java_source(name, path);
-	if (!ret.succeeded)
-		return ret;
+	if (!ret.succeeded) return ret;
 
 	string main_class = conf_str(name + "_main_class");
 
-	executef("rm %s/%s -rf 2>/dev/null; mkdir %s/%s", path.c_str(), name.c_str(), path.c_str(), name.c_str());
-	executef("echo package %s\\; | cat - %s/%s.code >%s/%s/%s.java", name.c_str(), path.c_str(), name.c_str(), path.c_str(), name.c_str(), main_class.c_str());
+	executef("rm %s/%s -rf 2>/dev/null; mkdir %s/%s", path.c_str(), name.c_str(), path.c_str(),
+	         name.c_str());
+	executef("echo package %s\\; | cat - %s/%s.code >%s/%s/%s.java", name.c_str(), path.c_str(),
+	         name.c_str(), path.c_str(), name.c_str(), main_class.c_str());
 
-	return run_compiler((path + "/" + name).c_str(),
-			"/usr/lib/jvm/java-8-openjdk-amd64/bin/javac", (main_class + ".java").c_str(), NULL);
+	return run_compiler((path + "/" + name).c_str(), "/usr/lib/jvm/java-8-openjdk-amd64/bin/javac",
+	                    (main_class + ".java").c_str(), NULL);
 }
 RunCompilerResult compile_java11(const string &name, const string &path = work_path) {
 	RunCompilerResult ret = prepare_java_source(name, path);
-	if (!ret.succeeded)
-		return ret;
+	if (!ret.succeeded) return ret;
 
 	string main_class = conf_str(name + "_main_class");
 
-	executef("rm %s/%s -rf 2>/dev/null; mkdir %s/%s", path.c_str(), name.c_str(), path.c_str(), name.c_str());
-	executef("echo package %s\\; | cat - %s/%s.code >%s/%s/%s.java", name.c_str(), path.c_str(), name.c_str(), path.c_str(), name.c_str(), main_class.c_str());
+	executef("rm %s/%s -rf 2>/dev/null; mkdir %s/%s", path.c_str(), name.c_str(), path.c_str(),
+	         name.c_str());
+	executef("echo package %s\\; | cat - %s/%s.code >%s/%s/%s.java", name.c_str(), path.c_str(),
+	         name.c_str(), path.c_str(), name.c_str(), main_class.c_str());
 
-	return run_compiler((path + "/" + name).c_str(),
-			"/usr/lib/jvm/java-11-openjdk-amd64/bin/javac", (main_class + ".java").c_str(), NULL);
+	return run_compiler((path + "/" + name).c_str(), "/usr/lib/jvm/java-11-openjdk-amd64/bin/javac",
+	                    (main_class + ".java").c_str(), NULL);
 }
 
-RunCompilerResult compile(const char *name)  {
+RunCompilerResult compile(const char *name) {
 	string lang = conf_str(string(name) + "_language");
 
-	if ((lang == "C++" || lang == "C++11" || lang == "C") && has_illegal_keywords_in_file(work_path + "/" + name + ".code"))
-	{
+	if (lang[0] == 'C' && has_illegal_keywords_in_file(work_path + "/" + name + ".code")) {
 		RunCompilerResult res;
 		res.type = RS_DGS;
 		res.ust = -1;
@@ -1208,8 +1194,26 @@ RunCompilerResult compile(const char *name)  {
 	if (lang == "C++") {
 		return compile_cpp(name);
 	}
+	if (lang == "C++98") {
+		return compile_cpp98(name);
+	}
 	if (lang == "C++11") {
 		return compile_cpp11(name);
+	}
+	if (lang == "C++14") {
+		return compile_cpp14(name);
+	}
+	if (lang == "C++17") {
+		return compile_cpp17(name);
+	}
+	if (lang == "C++20") {
+		return compile_cpp20(name);
+	}
+	if (lang == "C++23") {
+		return compile_cpp23(name);
+	}
+	if (lang == "C++26") {
+		return compile_cpp26(name);
 	}
 	if (lang == "Python2") {
 		return compile_python2(name);
@@ -1236,38 +1240,82 @@ RunCompilerResult compile(const char *name)  {
 }
 
 RunCompilerResult compile_c_with_implementer(const string &name, const string &path = work_path) {
-	return run_compiler(path.c_str(), 
-			"/usr/bin/gcc", "-o", name.c_str(), "implementer.c", "-x", "c", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", NULL);
+	return run_compiler(path.c_str(), "/usr/bin/gcc", "-o", name.c_str(), "implementer.c", "-x",
+	                    "c", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", NULL);
 }
 RunCompilerResult compile_pas_with_implementer(const string &name, const string &path = work_path) {
-	executef("cp %s %s", (path + "/" + name + ".code").c_str(), (path + "/" + conf_str(name + "_unit_name") + ".pas").c_str());
-	return run_compiler(path.c_str(),
-			"/usr/bin/fpc", "implementer.pas", ("-o" + name).c_str(), "-O2", NULL);
+	executef("cp %s %s", (path + "/" + name + ".code").c_str(),
+	         (path + "/" + conf_str(name + "_unit_name") + ".pas").c_str());
+	return run_compiler(path.c_str(), "/usr/bin/fpc", "implementer.pas", ("-o" + name).c_str(),
+	                    "-O2", NULL);
 }
 RunCompilerResult compile_cpp_with_implementer(const string &name, const string &path = work_path) {
-	return run_compiler(path.c_str(),
-			"/usr/bin/g++", "-o", name.c_str(), "implementer.cpp", "-x", "c++", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", NULL);
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "implementer.cpp", "-x",
+	                    "c++", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", NULL);
 }
-RunCompilerResult compile_cpp11_with_implementer(const string &name, const string &path = work_path) {
-	return run_compiler(path.c_str(),
-			"/usr/bin/g++", "-o", name.c_str(), "implementer.cpp", "-x", "c++", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE", "-std=c++11", NULL);
+RunCompilerResult compile_cpp98_with_implementer(const string &name,
+                                                 const string &path = work_path) {
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "implementer.cpp", "-x",
+	                    "c++", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE",
+	                    "-std=c++98", NULL);
+}
+RunCompilerResult compile_cpp11_with_implementer(const string &name,
+                                                 const string &path = work_path) {
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "implementer.cpp", "-x",
+	                    "c++", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE",
+	                    "-std=c++11", NULL);
+}
+RunCompilerResult compile_cpp14_with_implementer(const string &name,
+                                                 const string &path = work_path) {
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "implementer.cpp", "-x",
+	                    "c++", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE",
+	                    "-std=c++14", NULL);
+}
+RunCompilerResult compile_cpp17_with_implementer(const string &name,
+                                                 const string &path = work_path) {
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "implementer.cpp", "-x",
+	                    "c++", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE",
+	                    "-std=c++17", NULL);
+}
+RunCompilerResult compile_cpp20_with_implementer(const string &name,
+                                                 const string &path = work_path) {
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "implementer.cpp", "-x",
+	                    "c++", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE",
+	                    "-std=c++20", NULL);
+}
+RunCompilerResult compile_cpp23_with_implementer(const string &name,
+                                                 const string &path = work_path) {
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "implementer.cpp", "-x",
+	                    "c++", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE",
+	                    "-std=c++23", NULL);
+}
+RunCompilerResult compile_cpp26_with_implementer(const string &name,
+                                                 const string &path = work_path) {
+	return run_compiler(path.c_str(), "/usr/bin/g++", "-o", name.c_str(), "implementer.cpp", "-x",
+	                    "c++", (name + ".code").c_str(), "-lm", "-O2", "-DONLINE_JUDGE",
+	                    "-std=c++26", NULL);
 }
 /*
-RunCompilerResult compile_python2(const string &name, const string &path = work_path) {
-	return run_compiler(path.c_str(),
-			"/usr/bin/python2", "-E", "-s", "-B", "-O", "-c",
-			("import py_compile\nimport sys\ntry:\n    py_compile.compile('" + name + ".code'" + ", '" + name + "', doraise=True)\n    sys.exit(0)\nexcept Exception as e:\n    print e\n    sys.exit(1)").c_str(), NULL);
+RunCompilerResult compile_python2(const string &name, const string &path =
+work_path) { return run_compiler(path.c_str(),
+                        "/usr/bin/python2", "-E", "-s", "-B", "-O", "-c",
+                        ("import py_compile\nimport sys\ntry:\n
+py_compile.compile('" + name + ".code'" + ", '" + name + "', doraise=True)\n
+sys.exit(0)\nexcept Exception as e:\n    print e\n    sys.exit(1)").c_str(),
+NULL);
 }
-RunCompilerResult compile_python3(const string &name, const string &path = work_path) {
-	return run_compiler(path.c_str(),
-			"/usr/bin/python3", "-I", "-B", "-O", "-c", ("import py_compile\nimport sys\ntry:\n    py_compile.compile('" + name + ".code'" + ", '" + name + "', doraise=True)\n    sys.exit(0)\nexcept Exception as e:\n    print(e)\n    sys.exit(1)").c_str(), NULL);
+RunCompilerResult compile_python3(const string &name, const string &path =
+work_path) { return run_compiler(path.c_str(),
+                        "/usr/bin/python3", "-I", "-B", "-O", "-c", ("import
+py_compile\nimport sys\ntry:\n    py_compile.compile('" + name + ".code'" + ",
+'" + name + "', doraise=True)\n    sys.exit(0)\nexcept Exception as e:\n
+print(e)\n    sys.exit(1)").c_str(), NULL);
 }
 */
-RunCompilerResult compile_with_implementer(const char *name)  {
+RunCompilerResult compile_with_implementer(const char *name) {
 	string lang = conf_str(string(name) + "_language");
 
-	if (has_illegal_keywords_in_file(work_path + "/" + name + ".code"))
-	{
+	if (has_illegal_keywords_in_file(work_path + "/" + name + ".code")) {
 		RunCompilerResult res;
 		res.type = RS_DGS;
 		res.ust = -1;
@@ -1280,8 +1328,26 @@ RunCompilerResult compile_with_implementer(const char *name)  {
 	if (lang == "C++") {
 		return compile_cpp_with_implementer(name);
 	}
+	if (lang == "C++98") {
+		return compile_cpp98_with_implementer(name);
+	}
 	if (lang == "C++11") {
 		return compile_cpp11_with_implementer(name);
+	}
+	if (lang == "C++14") {
+		return compile_cpp14_with_implementer(name);
+	}
+	if (lang == "C++17") {
+		return compile_cpp17_with_implementer(name);
+	}
+	if (lang == "C++20") {
+		return compile_cpp20_with_implementer(name);
+	}
+	if (lang == "C++23") {
+		return compile_cpp23_with_implementer(name);
+	}
+	if (lang == "C++26") {
+		return compile_cpp26_with_implementer(name);
 	}
 	if (lang == "C") {
 		return compile_c_with_implementer(name);
@@ -1307,9 +1373,7 @@ struct TestPointConfig {
 	string output_file_name;
 	string answer_file_name;
 
-	TestPointConfig()
-			: submit_answer(-1), validate_input_before_test(-1) {
-	}
+	TestPointConfig() : submit_answer(-1), validate_input_before_test(-1) {}
 
 	void auto_complete(int num) {
 		if (submit_answer == -1) {
@@ -1334,39 +1398,31 @@ PointInfo test_point(const string &name, const int &num, TestPointConfig tpc = T
 	tpc.auto_complete(num);
 
 	if (tpc.validate_input_before_test) {
-		RunValidatorResult val_ret = run_validator(
-				tpc.input_file_name,
-				conf_run_limit("validator", 0, RL_VALIDATOR_DEFAULT),
-				conf_str("validator"));
+		RunValidatorResult val_ret =
+		    run_validator(tpc.input_file_name, conf_run_limit("validator", 0, RL_VALIDATOR_DEFAULT),
+		                  conf_str("validator"));
 		if (val_ret.type != RS_AC) {
-			return PointInfo(num, 0, -1, -1,
-					"Validator " + info_str(val_ret.type),
-					file_preview(tpc.input_file_name), "",
-					"");
+			return PointInfo(num, 0, -1, -1, "Validator " + info_str(val_ret.type),
+			                 file_preview(tpc.input_file_name), "", "");
 		} else if (!val_ret.succeeded) {
-			return PointInfo(num, 0, -1, -1,
-					"Invalid Input",
-					file_preview(tpc.input_file_name), "",
-					val_ret.info);
+			return PointInfo(num, 0, -1, -1, "Invalid Input", file_preview(tpc.input_file_name), "",
+			                 val_ret.info);
 		}
 	}
 
 	if (!conf_is("interaction_mode", "on")) {
 		RunResult pro_ret;
 		if (!tpc.submit_answer) {
-			pro_ret = run_submission_program(
-					tpc.input_file_name.c_str(),
-					tpc.output_file_name.c_str(),
-					conf_run_limit(num, RL_DEFAULT),
-					name);
+			pro_ret =
+			    run_submission_program(tpc.input_file_name.c_str(), tpc.output_file_name.c_str(),
+			                           conf_run_limit(num, RL_DEFAULT), name);
 			if (conf_has("token")) {
 				file_hide_token(tpc.output_file_name, conf_str("token", ""));
 			}
 			if (pro_ret.type != RS_AC) {
-				return PointInfo(num, 0, -1, -1,
-						info_str(pro_ret.type),
-						file_preview(tpc.input_file_name), file_preview(tpc.output_file_name),
-						"");
+				return PointInfo(num, 0, -1, -1, info_str(pro_ret.type),
+				                 file_preview(tpc.input_file_name),
+				                 file_preview(tpc.output_file_name), "");
 			}
 		} else {
 			pro_ret.type = RS_AC;
@@ -1375,52 +1431,40 @@ PointInfo test_point(const string &name, const int &num, TestPointConfig tpc = T
 			pro_ret.exit_code = 0;
 		}
 
-		RunCheckerResult chk_ret = run_checker(
-				conf_run_limit("checker", num, RL_CHECKER_DEFAULT),
-				conf_str("checker"),
-				tpc.input_file_name,
-				tpc.output_file_name,
-				tpc.answer_file_name);
+		RunCheckerResult chk_ret =
+		    run_checker(conf_run_limit("checker", num, RL_CHECKER_DEFAULT), conf_str("checker"),
+		                tpc.input_file_name, tpc.output_file_name, tpc.answer_file_name);
 		if (chk_ret.type != RS_AC) {
-			return PointInfo(num, 0, -1, -1,
-					"Checker " + info_str(chk_ret.type),
-					file_preview(tpc.input_file_name), file_preview(tpc.output_file_name),
-					"");
+			return PointInfo(num, 0, -1, -1, "Checker " + info_str(chk_ret.type),
+			                 file_preview(tpc.input_file_name), file_preview(tpc.output_file_name),
+			                 "");
 		}
 
-		return PointInfo(num, chk_ret.scr, pro_ret.ust, pro_ret.usm, 
-				"default",
-				file_preview(tpc.input_file_name), file_preview(tpc.output_file_name),
-				chk_ret.info);
+		return PointInfo(num, chk_ret.scr, pro_ret.ust, pro_ret.usm, "default",
+		                 file_preview(tpc.input_file_name), file_preview(tpc.output_file_name),
+		                 chk_ret.info);
 	} else {
 		string real_output_file_name = tpc.output_file_name + ".real_input.txt";
 		string real_input_file_name = tpc.output_file_name + ".real_output.txt";
-		RunSimpleInteractionResult rires = run_simple_interation(
-				tpc.input_file_name,
-				tpc.answer_file_name,
-				real_input_file_name,
-				real_output_file_name,
-				conf_run_limit(num, RL_DEFAULT),
-				conf_run_limit("interactor", num, RL_INTERACTOR_DEFAULT),
-				name);
+		RunSimpleInteractionResult rires =
+		    run_simple_interation(tpc.input_file_name, tpc.answer_file_name, real_input_file_name,
+		                          real_output_file_name, conf_run_limit(num, RL_DEFAULT),
+		                          conf_run_limit("interactor", num, RL_INTERACTOR_DEFAULT), name);
 
 		if (rires.ires.type != RS_AC) {
-			return PointInfo(num, 0, -1, -1,
-					"Interactor " + info_str(rires.ires.type),
-					file_preview(real_input_file_name), file_preview(real_output_file_name),
-					"");
+			return PointInfo(num, 0, -1, -1, "Interactor " + info_str(rires.ires.type),
+			                 file_preview(real_input_file_name),
+			                 file_preview(real_output_file_name), "");
 		}
 		if (rires.res.type != RS_AC) {
-			return PointInfo(num, 0, -1, -1,
-					info_str(rires.res.type),
-					file_preview(real_input_file_name), file_preview(real_output_file_name),
-					"");
+			return PointInfo(num, 0, -1, -1, info_str(rires.res.type),
+			                 file_preview(real_input_file_name),
+			                 file_preview(real_output_file_name), "");
 		}
 
-		return PointInfo(num, rires.ires.scr, rires.res.ust, rires.res.usm, 
-				"default",
-				file_preview(real_input_file_name), file_preview(real_output_file_name),
-				rires.ires.info);
+		return PointInfo(num, rires.ires.scr, rires.res.ust, rires.res.usm, "default",
+		                 file_preview(real_input_file_name), file_preview(real_output_file_name),
+		                 rires.ires.info);
 	}
 }
 
@@ -1428,20 +1472,15 @@ PointInfo test_hack_point(const string &name, TestPointConfig tpc) {
 	tpc.submit_answer = false;
 	tpc.validate_input_before_test = false;
 	tpc.auto_complete(0);
-	RunValidatorResult val_ret = run_validator(
-			tpc.input_file_name,
-			conf_run_limit("validator", 0, RL_VALIDATOR_DEFAULT),
-			conf_str("validator"));
+	RunValidatorResult val_ret =
+	    run_validator(tpc.input_file_name, conf_run_limit("validator", 0, RL_VALIDATOR_DEFAULT),
+	                  conf_str("validator"));
 	if (val_ret.type != RS_AC) {
-		return PointInfo(0, 0, -1, -1,
-				"Validator " + info_str(val_ret.type),
-				file_preview(tpc.input_file_name), "",
-				"");
+		return PointInfo(0, 0, -1, -1, "Validator " + info_str(val_ret.type),
+		                 file_preview(tpc.input_file_name), "", "");
 	} else if (!val_ret.succeeded) {
-		return PointInfo(0, 0, -1, -1,
-				"Invalid Input",
-				file_preview(tpc.input_file_name), "",
-				val_ret.info);
+		return PointInfo(0, 0, -1, -1, "Invalid Input", file_preview(tpc.input_file_name), "",
+		                 val_ret.info);
 	}
 
 	RunLimit default_std_run_limit = conf_run_limit(0, RL_DEFAULT);
@@ -1451,16 +1490,11 @@ PointInfo test_hack_point(const string &name, TestPointConfig tpc) {
 		RunProgramConfig rpc;
 		rpc.result_file_name = result_path + "/run_standard_program.txt";
 		RunResult std_ret = run_submission_program(
-				tpc.input_file_name,
-				tpc.answer_file_name,
-				conf_run_limit("standard", 0, default_std_run_limit),
-				"std",
-				rpc);
+		    tpc.input_file_name, tpc.answer_file_name,
+		    conf_run_limit("standard", 0, default_std_run_limit), "std", rpc);
 		if (std_ret.type != RS_AC) {
-			return PointInfo(0, 0, -1, -1,
-					"Standard Program " + info_str(std_ret.type),
-					file_preview(tpc.input_file_name), "",
-					"");
+			return PointInfo(0, 0, -1, -1, "Standard Program " + info_str(std_ret.type),
+			                 file_preview(tpc.input_file_name), "", "");
 		}
 		if (conf_has("token")) {
 			file_hide_token(tpc.answer_file_name, conf_str("token", ""));
@@ -1471,26 +1505,18 @@ PointInfo test_hack_point(const string &name, TestPointConfig tpc) {
 		string real_output_file_name = tpc.answer_file_name;
 		string real_input_file_name = tpc.output_file_name + ".real_output.txt";
 		RunSimpleInteractionResult rires = run_simple_interation(
-				tpc.input_file_name,
-				tpc.answer_file_name,
-				real_input_file_name,
-				real_output_file_name,
-				conf_run_limit("standard", 0, default_std_run_limit),
-				conf_run_limit("interactor", 0, RL_INTERACTOR_DEFAULT),
-				"std",
-				rpc);
+		    tpc.input_file_name, tpc.answer_file_name, real_input_file_name, real_output_file_name,
+		    conf_run_limit("standard", 0, default_std_run_limit),
+		    conf_run_limit("interactor", 0, RL_INTERACTOR_DEFAULT), "std", rpc);
 
 		if (rires.ires.type != RS_AC) {
 			return PointInfo(0, 0, -1, -1,
-					"Interactor " + info_str(rires.ires.type) + " (Standard Program)",
-					file_preview(real_input_file_name), "",
-					"");
+			                 "Interactor " + info_str(rires.ires.type) + " (Standard Program)",
+			                 file_preview(real_input_file_name), "", "");
 		}
 		if (rires.res.type != RS_AC) {
-			return PointInfo(0, 0, -1, -1,
-					"Standard Program " + info_str(rires.res.type),
-					file_preview(real_input_file_name), "",
-					"");
+			return PointInfo(0, 0, -1, -1, "Standard Program " + info_str(rires.res.type),
+			                 file_preview(real_input_file_name), "", "");
 		}
 	}
 
@@ -1506,11 +1532,7 @@ CustomTestInfo ordinary_custom_test(const string &name) {
 	string input_file_name = work_path + "/input.txt";
 	string output_file_name = work_path + "/output.txt";
 
-	RunResult pro_ret = run_submission_program(
-			input_file_name,
-			output_file_name,
-			lim,
-			name);
+	RunResult pro_ret = run_submission_program(input_file_name, output_file_name, lim, name);
 	if (conf_has("token")) {
 		file_hide_token(output_file_name, conf_str("token", ""));
 	}
@@ -1524,19 +1546,17 @@ CustomTestInfo ordinary_custom_test(const string &name) {
 	if (pro_ret.type == RS_TLE) {
 		exp = "<p>[<strong>time limit:</strong> " + vtos(lim.time) + "s]</p>";
 	}
-	return CustomTestInfo(pro_ret.ust, pro_ret.usm, 
-			info, exp, file_preview(output_file_name, 2048));
+	return CustomTestInfo(pro_ret.ust, pro_ret.usm, info, exp,
+	                      file_preview(output_file_name, 2048));
 }
 
-int scale_score(int scr100, int full) {
-	return scr100 * full / 100;
-}
+int scale_score(int scr100, int full) { return scr100 * full / 100; }
 
 /*======================  test End   ================== */
 
 /*======================= conf init =================== */
 
-void main_judger_init(int argc, char **argv)  {
+void main_judger_init(int argc, char **argv) {
 	main_path = UOJ_WORK_PATH;
 	work_path = main_path + "/work";
 	result_path = string(UOJ_RESULT_PATH);
