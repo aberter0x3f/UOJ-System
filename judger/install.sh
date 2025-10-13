@@ -21,11 +21,6 @@ UOJEOF
     su judger <<EOD
 ln -s /var/uoj_data_copy /opt/uoj_judger/uoj_judger/data
 cd /opt/uoj_judger && chmod +x judge_client
-cat >uoj_judger/include/uoj_work_path.h <<UOJEOF
-#define UOJ_WORK_PATH "/opt/uoj_judger/uoj_judger"
-#define UOJ_JUDGER_PYTHON3_VERSION "3.12"
-#define UOJ_JUDGER_FPC_VERSION "3.2.2"
-UOJEOF
 cd uoj_judger && make -j$(($(nproc) + 1))
 EOD
 }

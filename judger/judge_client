@@ -284,7 +284,7 @@ def judge():
 
     submission_judged = False
     report_thread.start()
-    execute(pipes.quote(uoj_judger_path("/main_judger")))
+    execute('cd %s && ./main_judger' % (pipes.quote(uoj_judger_path())))
     submission_judged = True
     report_thread.join()
 

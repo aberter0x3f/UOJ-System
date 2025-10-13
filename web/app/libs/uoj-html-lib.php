@@ -451,6 +451,7 @@ HTML;
 	switch ($file_language) {
 		case 'C++':
 		case 'C++98':
+		case 'C++03':
 		case 'C++11':
 		case 'C++14':
 		case 'C++17':
@@ -465,9 +466,16 @@ HTML;
 			break;
 		case 'Java8':
 		case 'Java11':
+		case 'Java17':
+		case 'Java21':
 			$sh_class = 'sh_java';
 			break;
 		case 'C':
+		case 'C89':
+		case 'C99':
+		case 'C11':
+		case 'C17':
+		case 'C23':
 			$sh_class = 'sh_c';
 			break;
 		case 'Pascal':
@@ -509,6 +517,7 @@ function echoSubmissionContent($submission, $requirement) {
 			switch ($file_language) {
 				case 'C++':
 				case 'C++98':
+				case 'C++03':
 				case 'C++11':
 				case 'C++14':
 				case 'C++17':
@@ -523,9 +532,16 @@ function echoSubmissionContent($submission, $requirement) {
 					break;
 				case 'Java8':
 				case 'Java11':
+				case 'Java17':
+				case 'Java21':
 					$sh_class = 'sh_java';
 					break;
 				case 'C':
+				case 'C89':
+				case 'C99':
+				case 'C11':
+				case 'C17':
+				case 'C23':
 					$sh_class = 'sh_c';
 					break;
 				case 'Pascal':

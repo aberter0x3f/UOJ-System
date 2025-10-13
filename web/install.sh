@@ -62,11 +62,6 @@ file_put_contents('/var/www/uoj/app/.config.php', "<?php\nreturn ".str_replace('
 UOJEOF
     # Prepare local sandbox
     cd /opt/uoj/judger/uoj_judger
-    cat >include/uoj_work_path.h <<UOJEOF
-#define UOJ_WORK_PATH "/opt/uoj/judger/uoj_judger"
-#define UOJ_JUDGER_PYTHON3_VERSION "3.12"
-#define UOJ_JUDGER_FPC_VERSION "3.2.2"
-UOJEOF
     make runner -j$(($(nproc) + 1)) && cd /opt/uoj/web
 }
 

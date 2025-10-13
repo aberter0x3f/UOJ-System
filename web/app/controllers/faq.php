@@ -19,13 +19,13 @@
 					<p>众所周知，信息学的题目一般形式为：给出 XXXXX，要你提交一份源代码，输出 XXXXX，然后时限若干秒，内存若干兆，数据若干组，每组数据与答案进行比较，不对就不给分。</p>
 					<p>看起来挺合理的，但是总是有意外。比如要求输出一个浮点数，与答案接近就满分。于是只好引入 Special Judge 来判断选手输出的正确性。</p>
 					<p>但是还是有意外，比如提交两个程序，一个压缩另一个解压；比如提交答案题只用提交文件；比如给出音乐要求识别乐器，达到 90% 的正确率就算满分……</p>
-					<p>这个时候 UOJ 出现了，于是<?= UOJConfig::$data['profile']['oj-name-short'] ?>就使用了这套系统。Universal 的中文意思是通用，之所以称之为 UOJ，因为我们所有题目从编译、运行到评分，都可以由出题人自定义。</p>
+					<p>这个时候 UOJ 出现了，于是 <?= UOJConfig::$data['profile']['oj-name-short'] ?> 就使用了这套系统。Universal 的中文意思是通用，之所以称之为 UOJ，因为我们所有题目从编译、运行到评分，都可以由出题人自定义。</p>
 					<p>如果你正在为没有地方测奇奇怪怪的题目而苦恼，那么你来对地方了。</p>
-					<p>当然了，<?= UOJConfig::$data['profile']['oj-name-short'] ?>对于传统题的评测也做了特别支持。平时做题时我很难容忍的地方就是数据出水了导致暴力得了好多分甚至过了，而出题人却委屈地说，总共才一百分，卡了这个暴力就不能卡另一个暴力，所以暴力过了就过了吧。</p>
-					<p>所以我们引入了 Extra Tests 和 Hack 机制。每道传统题的数据都分为 Tests 和 Extra Tests，Tests 满分 100 分，如果你通过了所有的 Tests，那么就会为你测 Extra Tests。如果过了 Tests 但没过 Extra Tests 那么倒扣 3 分变为 97 分。Extra Tests 的来源，一个是这道题没什么人可能会错的边界情况可以放在里面，另一个就是各位平时做题的时候，如果发现错误算法 AC 了，可以使用 hack 将其卡掉，<?= UOJConfig::$data['profile']['oj-name-short'] ?>会自动加入 Extra Tests 并重测。我们无法阻止暴力高分的脚步，但是不让他得满分还是有心里安慰作用的～</p>
-					<p><?= UOJConfig::$data['profile']['oj-name-short'] ?>还有比赛功能可以承办比赛，赛制暂时只支持 OI 赛制。（不过你可以利用现有方案变相实现 ACM 赛制！）未来将支持更多种多样的赛制甚至自定义赛制。</p>
-					<p>目前<?= UOJConfig::$data['profile']['oj-name-short'] ?>刚刚起步，还有很多地方有待完善。想出题、想出比赛、发现 BUG、发现槽点都可以联系我们，联系方式见下。</p>
-					<p>祝各位在<?= UOJConfig::$data['profile']['oj-name-short'] ?>玩得愉快！（求不虐萌萌哒服务器～求不虐萌萌哒测评机～！）</p>
+					<p>当然了，<?= UOJConfig::$data['profile']['oj-name-short'] ?> 对于传统题的评测也做了特别支持。平时做题时我很难容忍的地方就是数据出水了导致暴力得了好多分甚至过了，而出题人却委屈地说，总共才一百分，卡了这个暴力就不能卡另一个暴力，所以暴力过了就过了吧。</p>
+					<p>所以我们引入了 Extra Tests 和 Hack 机制。每道传统题的数据都分为 Tests 和 Extra Tests，Tests 满分 100 分，如果你通过了所有的 Tests，那么就会为你测 Extra Tests。如果过了 Tests 但没过 Extra Tests 那么倒扣 3 分变为 97 分。Extra Tests 的来源，一个是这道题没什么人可能会错的边界情况可以放在里面，另一个就是各位平时做题的时候，如果发现错误算法 AC 了，可以使用 hack 将其卡掉，<?= UOJConfig::$data['profile']['oj-name-short'] ?> 会自动加入 Extra Tests 并重测。我们无法阻止暴力高分的脚步，但是不让他得满分还是有心里安慰作用的～</p>
+					<p><?= UOJConfig::$data['profile']['oj-name-short'] ?> 还有比赛功能可以承办比赛，赛制暂时只支持 OI 赛制。（不过你可以利用现有方案变相实现 ACM 赛制！）未来将支持更多种多样的赛制甚至自定义赛制。</p>
+					<p>目前 <?= UOJConfig::$data['profile']['oj-name-short'] ?> 刚刚起步，还有很多地方有待完善。想出题、想出比赛、发现 BUG、发现槽点都可以联系我们，联系方式见下。</p>
+					<p>祝各位在 <?= UOJConfig::$data['profile']['oj-name-short'] ?> 玩得愉快！（求不虐萌萌哒服务器～求不虐萌萌哒测评机～！）</p>
 					<p><img src="/images/utility/qpx_n/b54.gif" alt="小熊抱抱" /></p>
 				</div>
 			</div>
@@ -36,7 +36,7 @@
 			</div>
 			<div id="collapseTwo" class="collapse">
 				<div class="card-body">
-					<p><?= UOJConfig::$data['profile']['oj-name-short'] ?>不提供头像存储服务。每到一个网站都要上传一个头像挺烦的对不对？我们支持 Gravatar，请使用 Gravatar 吧！Gravatar 是一个全球的头像存储服务，你的头像将会与你的电子邮箱绑定。在各大网站比如各种 Wordpress 还有各种 OJ 比如 Vijos、Contest Hunter 上，只要你电子邮箱填对了，那么你的头像也就立即能显示了！</p>
+					<p><?= UOJConfig::$data['profile']['oj-name-short'] ?> 不提供头像存储服务。每到一个网站都要上传一个头像挺烦的对不对？我们支持 Gravatar，请使用 Gravatar 吧！Gravatar 是一个全球的头像存储服务，你的头像将会与你的电子邮箱绑定。在各大网站比如各种 Wordpress 还有各种 OJ 比如 Vijos、Contest Hunter 上，只要你电子邮箱填对了，那么你的头像也就立即能显示了！</p>
 					<p>快使用 Gravatar 吧！Gravatar 地址：<a href="https://cn.gravatar.com/">https://cn.gravatar.com/</a>。进去后注册个帐号然后与邮箱绑定并上传头像，就 OK 啦！</p>
 				</div>
 			</div>
@@ -49,9 +49,8 @@
 				<div class="card-body">
 					<p>默认的测评环境是 Ubuntu Linux 24.04 LTS x86_64。</p>
 					<p>C 的编译器是 gcc 14.2.0，编译命令：<code>gcc code.c -o code -lm -O2 -DONLINE_JUDGE</code>。</p>
-					<p>C++ 的编译器是 g++ 14.2.0，编译命令：<code>g++ code.cpp -o code -lm -O2 -DONLINE_JUDGE</code>。如果选择 C++98/11/14… 会在编译命令后面添加<code>-std=c++98/11/14…</code>。</p>
-					<p>Java8 的 JDK 版本是 openjdk 8u462，编译命令：<code>javac code.java</code>。</p>
-					<p>Java11 的 JDK 版本是 openjdk 11.0.28，编译命令：<code>javac code.java</code>。</p>
+					<p>C++ 的编译器是 g++ 14.2.0，编译命令：<code>g++ code.cpp -o code -lm -O2 -DONLINE_JUDGE</code>。如果选择 C++98/03/11… 会在编译命令后面添加 <code>-std=c++98/03/11…</code>。</p>
+					<p>Java 的 JDK 版本是 openjdk 21.0.8，编译命令：<code>javac code.java</code>。如果选择 Java8/11/17… 会在编译命令后面添加 <code>--release 8/11/17…</code>。</p>
 					<p>Pascal 的编译器是 fpc 3.2.2，编译命令：<code>fpc code.pas -O2</code>。</p>
 					<p>Python 会先编译为优化过的字节码 <samp>.pyo</samp> 文件。支持的 Python 版本分别为 Python 2.7 和 3.12。</p>
 				</div>
@@ -83,7 +82,7 @@
 			</div>
 			<div id="collapseFive" class="collapse">
 				<div class="card-body">
-					<p>没错就是这样！除非是特殊情况，<?= UOJConfig::$data['profile']['oj-name-short'] ?>测评程序时的栈大小与该题的空间限制是相等的！</p>
+					<p>没错就是这样！除非是特殊情况，<?= UOJConfig::$data['profile']['oj-name-short'] ?> 测评程序时的栈大小与该题的空间限制是相等的！</p>
 				</div>
 			</div>
 		</div>
@@ -95,7 +94,7 @@
 				<div class="card-body">
 					<p>对于这类问题，我们在这里简单列一下可能原因：</p>
 					<ul>
-						<li>Linux 中换行符是 '\n' 而 Windows 中是 '\r\n'（多一个字符）。有些数据在 Windows 下生成，而<?= UOJConfig::$data['profile']['oj-name-short'] ?>评测环境为 Linux 系统。这种情况在字符串输入中非常常见。</li>
+						<li>Linux 中换行符是 '\n' 而 Windows 中是 '\r\n'（多一个字符）。有些数据在 Windows 下生成，而 <?= UOJConfig::$data['profile']['oj-name-short'] ?> 评测环境为 Linux 系统。这种情况在字符串输入中非常常见。</li>
 						<li>评测系统建立在 Linux 下，可能由于使用了 Linux 的保留字而出现 CE，但在 Windows 下正常。</li>
 						<li>Linux 对内存的访问控制更为严格，因此在 Windows 上可能正常运行的无效指针或数组下标访问越界，在评测系统上无法运行。</li>
 						<li>严重的内存泄漏问题很可能会引起系统的保护模块杀死你的进程。因此，凡是使用 malloc (或 calloc, realloc, new) 分配而得的内存空间，请使用 free (或 delete) 完全释放。</li>
@@ -110,10 +109,10 @@
 			</div>
 			<div id="collapseSeven" class="collapse">
 				<div class="card-body">
-					<p><?= UOJConfig::$data['profile']['oj-name-short'] ?>博客使用的是 Markdown。（好吧……好简陋的……好多功能还没写……）</p>
+					<p><?= UOJConfig::$data['profile']['oj-name-short'] ?> 博客使用的是 Markdown。（好吧……好简陋的……好多功能还没写……）</p>
 					<p>（喂喂喂我们是 OJ 好吗……要那么完善的博客功能干啥呢……？）</p>
 					<p>其实我觉得 Markdown 不用教！一学就会！</p>
-					<p>（完蛋了……<?= UOJConfig::$data['profile']['oj-name-short'] ?>好像没有 Markdown 的语法高亮……= =……）</p>
+					<p>（完蛋了…… <?= UOJConfig::$data['profile']['oj-name-short'] ?> 好像没有 Markdown 的语法高亮……= =……）</p>
 					<p>我就只介绍最基本的功能好了。其它的自己探索吧～比如<a href="http://wow.kuapp.com/markdown/">这里</a>。</p>
 					<!-- readmore -->
 					<p><code>**强调**</code> = <strong>强调</strong></p>
@@ -164,7 +163,7 @@
 					<h2>二级标题</h2>
 					<h3>三级标题</h3>
 					<h4>四级标题</h4>
-					<hr /><p>还有一个很重要的事情，就是你很容易以为<?= UOJConfig::$data['profile']['oj-name-short'] ?>在吃换行……</p>
+					<hr /><p>还有一个很重要的事情，就是你很容易以为 <?= UOJConfig::$data['profile']['oj-name-short'] ?> 在吃换行……</p>
 					<p>那是因为跟 LaTeX 一样，你需要一个空行来分段。你可以粗略地认为两个换行会被替换成一换行。（当然不完全是这样，空行是用来分段的，段落还有间距啊行首空两格啊之类的属性）</p>
 					<p>唔……就介绍到这里吧。想要更详细的介绍上网搜搜吧～</p>
 					<p>（评论区是不可以用任何 HTML 滴～但是数学公式还是没问题滴）</p>
@@ -195,10 +194,10 @@
 				<div class="card-body">
 					<p>如果你想出题、想办比赛、发现了 BUG 或者对网站有什么建议，可以通过下面的方式联系我们：</p>
 					<ul>
-						<li>私信联系<?= UOJConfig::$data['profile']['administrator'] ?>。</li>
-						<li>邮件联系<?= UOJConfig::$data['profile']['admin-email'] ?>。</li>
+						<li>私信联系 <?= UOJConfig::$data['profile']['administrator'] ?>。</li>
+						<li>邮件联系 <?= UOJConfig::$data['profile']['admin-email'] ?>。</li>
 						<?php if (UOJConfig::$data['profile']['QQ-group']!=''): ?>
-						<li>你也可以进 QQ 群水水，群号是<?= UOJConfig::$data['profile']['QQ-group'] ?>。</li>
+						<li>你也可以进 QQ 群水水，群号是 <?= UOJConfig::$data['profile']['QQ-group'] ?>。</li>
 						<?php endif ?>
 					</ul>
 				</div>

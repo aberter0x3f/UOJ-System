@@ -1,21 +1,23 @@
 FROM ubuntu:24.04
 MAINTAINER Baoshuo <i@baoshuo.ren>
-LABEL org.opencontainers.image.source=https://github.com/UniversalOJ/UOJ-System
-LABEL org.opencontainers.image.description="UOJ Judger"
-LABEL org.opencontainers.image.licenses=MIT
 
-SHELL ["/bin/bash", "-c"]
+LABEL org.opencontainers.image.source="https://github.com/UniversalOJ/UOJ-System"
+LABEL org.opencontainers.image.description="UOJ Judger"
+LABEL org.opencontainers.image.licenses="MIT"
+
+ARG CLONE_ADDFLAG
 
 ENV DEBIAN_FRONTEND=noninteractive
-ARG CLONE_ADDFLAG
+ENV LANG=C.UTF-8
+ENV TZ=Asia/Shanghai
 
 RUN \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-    git vim ntp zip unzip curl wget build-essential ca-certificates \
+    git vim ntp zip unzip curl wget make dpkg-dev ca-certificates \
     fp-compiler \
     python3 python3-requests \
-    openjdk-8-jdk openjdk-11-jdk \
+    openjdk-21-jdk-headless \
     gcc-14 g++-14 \
     libseccomp-dev \
     tzdata && \
@@ -40,6 +42,5 @@ WORKDIR /opt/uoj_judger
 # Install environment and set startup script
 RUN sh install.sh -p && sh install.sh -d
 
-ENV LANG=C.UTF-8 TZ=Asia/Shanghai
 EXPOSE 2333
-CMD /opt/up
+CMD ["/opt/up"]

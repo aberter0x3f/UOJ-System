@@ -17,12 +17,12 @@ RUN \
     apt-get update && apt-get install -y --no-install-recommends software-properties-common gnupg curl ca-certificates && \
     echo "deb http://ppa.launchpad.net/stesie/libv8/ubuntu bionic main" | tee /etc/apt/sources.list.d/stesie-libv8.list && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys D858A0DF && \
-    add-apt-repository ppa:ondrej/php && \
+    add-apt-repository -y ppa:ondrej/php && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
       git vim ntp zip unzip curl wget apache2 libapache2-mod-xsendfile \
       php7.4 libapache2-mod-php7.4 php7.4-dev php-pear php7.4-zip php7.4-mysql php7.4-mbstring php7.4-gd php7.4-intl php7.4-xsl \
-      build-essential gcc g++ gcc-14 g++-14 make re2c \
+      gcc-14 g++-14 make dpkg-dev re2c \
       libv8-7.5-dev libyaml-dev libseccomp-dev && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100 && \

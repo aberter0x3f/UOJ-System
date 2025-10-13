@@ -17,35 +17,18 @@
 #include <thread>
 #include <vector>
 
+#include "uoj_run.h"
+
 using namespace std;
 
-struct PipeConfig {
-	int from, to;
-	int from_fd, to_fd;
-
-	string saving_file_name;  // empty for none
-
-	PipeConfig() {}
-	PipeConfig(string str) {
-		if (sscanf(str.c_str(), "%d:%d-%d:%d", &from, &from_fd, &to, &to_fd) != 4) {
-			throw invalid_argument("bad init str for PipeConfig");
-		}
-	}
-};
-
-struct RunInteractionConfig {
-	vector<string> cmds;
-	vector<PipeConfig> pipes;
-};
-
-struct RunCmdData {
+struct run_cmd_data {
 	string cmd;
 	pid_t pid;
 
 	vector<int> ipipes, opipes;
 };
-struct PipeData {
-	PipeConfig config;
+struct pipe_data {
+	runp::interaction::pipe_config config;
 	int ipipefd[2], opipefd[2];
 	thread io_thread;
 	exception_ptr eptr;
@@ -62,10 +45,10 @@ void write_all_or_throw(int fd, char *buf, int n) {
 	}
 }
 
-class RunInteraction {
+class interaction_runner {
 private:
-	vector<RunCmdData> cmds;
-	vector<PipeData> pipes;
+	vector<run_cmd_data> cmds;
+	vector<pipe_data> pipes;
 
 	void prepare_fd() {  // me
 		for (int i = 0; i < (int)pipes.size(); i++) {
@@ -177,7 +160,7 @@ private:
 	}
 
 public:
-	RunInteraction(const RunInteractionConfig &config) {
+	interaction_runner(const runp::interaction::config &config) {
 		cmds.resize(config.cmds.size());
 		for (int i = 0; i < (int)config.cmds.size(); i++) {
 			cmds[i].cmd = config.cmds[i];
@@ -208,7 +191,7 @@ public:
 
 		prepare_fd();
 		for (int i = 0; i < (int)pipes.size(); i++) {
-			pipes[i].io_thread = thread(&RunInteraction::wait_pipe_io, this, i);
+			pipes[i].io_thread = thread(&interaction_runner::wait_pipe_io, this, i);
 		}
 	}
 
@@ -223,12 +206,12 @@ public:
 };
 
 error_t run_interaction_argp_parse_opt(int key, char *arg, struct argp_state *state) {
-	RunInteractionConfig *config = (RunInteractionConfig *)state->input;
+	runp::interaction::config *config = (runp::interaction::config *)state->input;
 
 	try {
 		switch (key) {
 			case 'p':
-				config->pipes.push_back(PipeConfig(arg));
+				config->pipes.push_back(runp::interaction::pipe_config(arg));
 				break;
 			case 's':
 				if (config->pipes.empty()) {
@@ -254,7 +237,7 @@ error_t run_interaction_argp_parse_opt(int key, char *arg, struct argp_state *st
 	return 0;
 }
 
-RunInteractionConfig parse_args(int argc, char **argv) {
+runp::interaction::config parse_args(int argc, char **argv) {
 	argp_option run_interaction_argp_options[] = {
 	    {"add-pipe", 'p', "PIPE", 0, "Add a pipe <from>:<fd>-<to>:<fd> (fd < 128)", 1},
 	    {"save-pipe", 's', "FILE", 0, "Set last pipe saving file", 2},
@@ -266,7 +249,7 @@ RunInteractionConfig parse_args(int argc, char **argv) {
 	argp run_interaction_argp = {run_interaction_argp_options, run_interaction_argp_parse_opt,
 	                             run_interaction_argp_args_doc, run_interaction_argp_doc};
 
-	RunInteractionConfig config;
+	runp::interaction::config config;
 
 	argp_parse(&run_interaction_argp, argc, argv, ARGP_NO_ARGS | ARGP_IN_ORDER, 0, &config);
 
@@ -276,7 +259,7 @@ RunInteractionConfig parse_args(int argc, char **argv) {
 int main(int argc, char **argv) {
 	signal(SIGPIPE, SIG_IGN);
 
-	RunInteraction ri(parse_args(argc, argv));
+	interaction_runner ri(parse_args(argc, argv));
 	ri.join();
 
 	return 0;
