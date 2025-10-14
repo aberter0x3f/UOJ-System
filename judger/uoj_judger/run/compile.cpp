@@ -447,12 +447,12 @@ int compile_pas(const compile_config &conf) {
 }
 
 int compile(const compile_config &conf) {
-	if ((conf.lang.length() > 0 && conf.lang[0] == 'C') && has_illegal_keywords_in_file(conf.src)) {
+	std::string lang = upgraded_lang(conf.lang);
+
+	if ((lang.length() > 0 && lang[0] == 'C') && has_illegal_keywords_in_file(conf.src)) {
 		std::cerr << "Compile Failed: assembly language detected" << std::endl;
 		return 1;
 	}
-
-	std::string lang = conf.lang;
 
 	if (lang == "C++98") {
 		return compile_cpp(conf, "c++98");
