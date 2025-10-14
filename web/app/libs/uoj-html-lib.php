@@ -510,9 +510,8 @@ function echoSubmissionContent($submission, $requirement) {
 		echo '<h4 class="card-title">Zip file open error</h4>';
 		echo '</div>';
 		echo '<div class="card-body">';
-		echo '<pre>'."\n"."Open zip file `$zip_path` failed: $open_res"."\n".'</pre>';
+		echo '<pre>'."\n"."Open zip file `".HTML::escape($zip_path)."` failed: $open_res"."\n".'</pre>';
 		echo '</div>';
-		echo '<div class="card-footer">'.$footer_text.'</div>';
 		echo '</div>';
 		return;
 	}
