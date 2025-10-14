@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include "run_program_sandbox.h"
 
 namespace fs = std::filesystem;
@@ -187,7 +189,7 @@ void parse_args(int argc, char **argv) {
 	}
 }
 
-void set_limit(int r, int rcur, int rmax = -1) {
+void set_limit(int r, ssize_t rcur, ssize_t rmax = -1) {
 	if (rmax == -1) rmax = rcur;
 	struct rlimit l;
 	if (getrlimit(r, &l) == -1) {
@@ -217,9 +219,9 @@ void set_user_cpu_time_limit(double tl) {
 [[noreturn]] void run_child() {
 	setpgid(0, 0);
 
-	set_limit(RLIMIT_FSIZE, run_program_config.limits.output << 20);
-	set_limit(RLIMIT_STACK, run_program_config.limits.stack << 20);
-	// TODO: use https://man7.org/linux/man-pages/man3/vlimit.3.html to limit virtual memory
+	set_limit(RLIMIT_FSIZE, run_program_config.limits.output << 20ll);
+	set_limit(RLIMIT_STACK, run_program_config.limits.stack << 20ll);
+	set_limit(RLIMIT_AS, (run_program_config.limits.memory + 64ll) << 20ll);
 
 	if (run_program_config.input_file_name != "stdin") {
 		if (freopen(run_program_config.input_file_name.c_str(), "r", stdin) == NULL) {

@@ -204,7 +204,7 @@ def get_judger_result():
             else:
                 assert len(sp) == 2
                 res[sp[0]] = sp[1]
-        res["score"] = int(res["score"])
+        res["score"] = float(res["score"])
         res["time"] = int(res["time"])
         res["memory"] = int(res["memory"])
     res["status"] = "Judged"

@@ -62,7 +62,7 @@ file_put_contents('/var/www/uoj/app/.config.php', "<?php\nreturn ".str_replace('
 UOJEOF
     # Prepare local sandbox
     cd /opt/uoj/judger/uoj_judger
-    make runner -j$(($(nproc) + 1)) && cd /opt/uoj/web
+    make -j$(($(nproc) + 1)) && cd /opt/uoj/web
 }
 
 initProgress(){

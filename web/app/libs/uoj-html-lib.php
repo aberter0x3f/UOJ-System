@@ -501,7 +501,21 @@ HTML;
 function echoSubmissionContent($submission, $requirement) {
 	$zip_file = new ZipArchive();
 	$submission_content = json_decode($submission['content'], true);
-	$zip_file->open(UOJContext::storagePath().$submission_content['file_name']);
+	$zip_path = UOJContext::storagePath().$submission_content['file_name'];
+	$open_res = $zip_file->open($zip_path);
+
+	if ($open_res !== true) {
+		echo '<div class="card border-info mb-3">';
+		echo '<div class="card-header bg-danger">';
+		echo '<h4 class="card-title">Zip file open error</h4>';
+		echo '</div>';
+		echo '<div class="card-body">';
+		echo '<pre>'."\n"."Open zip file `$zip_path` failed: $open_res"."\n".'</pre>';
+		echo '</div>';
+		echo '<div class="card-footer">'.$footer_text.'</div>';
+		echo '</div>';
+		return;
+	}
 	
 	$config = array();
 	foreach ($submission_content['config'] as $config_key => $config_val) {

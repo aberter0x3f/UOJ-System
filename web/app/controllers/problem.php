@@ -144,7 +144,7 @@
 	if ($can_use_zip_upload) {
 		$zip_answer_form = newZipSubmissionForm('zip_answer',
 			$submission_requirement,
-			'uojRandAvaiableSubmissionFileName',
+			'uojRandAvailableSubmissionFileName',
 			'handleUpload');
 		$zip_answer_form->extra_validator = function() {
 			global $ban_in_contest;
@@ -159,7 +159,7 @@
 	
 	$answer_form = newSubmissionForm('answer',
 		$submission_requirement,
-		'uojRandAvaiableSubmissionFileName',
+		'uojRandAvailableSubmissionFileName',
 		'handleUpload');
 	$answer_form->extra_validator = function() {
 		global $ban_in_contest;
@@ -175,7 +175,7 @@
 		$custom_test_form = newSubmissionForm('custom_test',
 			$custom_test_requirement,
 			function() {
-				return uojRandAvaiableFileName('/tmp/');
+				return uojRandAvailableFileName('/tmp/');
 			},
 			'handleCustomTestUpload');
 		$custom_test_form->appendHTML(<<<EOD

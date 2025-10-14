@@ -28,7 +28,7 @@ $paste_form = newSubmissionForm('paste',
 			"file_name" => "paste.code"
 		]
 	],
-	'uojRandAvaiablePasteFileName',
+	'uojRandAvailablePasteFileName',
 	'handleUpload');
 $paste_form->succ_href = '/paste';
 $paste_form->runAtServer();

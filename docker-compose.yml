@@ -12,7 +12,17 @@ services:
       - MYSQL_DATABASE=app_uoj233
       - MYSQL_ROOT_PASSWORD=root
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$$MYSQL_ROOT_PASSWORD",
+        ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -39,7 +49,7 @@ services:
         source: ./.config.local.php
         target: /opt/uoj/web/app/.config.php
     ports:
-      - "8080:80"
+      - "80:80"
       - "3690:3690"
     environment:
       - DATABASE_HOST=uoj-db
