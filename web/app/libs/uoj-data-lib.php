@@ -267,7 +267,7 @@
 							if (isset($this->problem_conf['with_implementer']) && $this->problem_conf['with_implementer'] == 'on') {
 								$this->compile_at_prepare('std',
 									array(
-+										'impl' => 'implementer',
+										'impl' => 'implementer',
 										'path' => 'require'
 									)
 								);
