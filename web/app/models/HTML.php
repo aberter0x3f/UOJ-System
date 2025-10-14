@@ -163,4 +163,13 @@ class HTML {
 		
 		return new HTMLPurifier($config);
 	}
+
+	public static function parsedown($config = []) {
+		return new UOJMarkdown($config + [
+			'math' => [
+				'enabled' => true,
+				'matchSingleDollar' => true
+			]
+		]);
+	}
 }

@@ -15,8 +15,6 @@ getAptPackage(){
     apt-get update && apt-get install -y git vim ntp zip unzip curl wget apache2 libapache2-mod-xsendfile libapache2-mod-php php php-dev php-pear php-zip php-mysql php-mbstring php-gd php-intl php-xsl g++ make re2c libv8-7.5-dev libyaml-dev
     # Install PHP extensions
     yes | pecl install yaml
-    git clone https://github.com/phpv8/v8js.git --depth=1 -b 4c026f3fb291797c109adcabda6aeba6491fe44f /tmp/pear/download/v8js-master && cd /tmp/pear/download/v8js-master
-    phpize && ./configure --with-php-config=/usr/bin/php-config --with-v8js=/opt/libv8-7.5 && make install && cd -
 }
 
 setLAMPConf(){
@@ -45,7 +43,7 @@ UOJEOF
     a2enmod rewrite headers && sed -i -e '172s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
     #Create UOJ session save dir and make PHP extensions available
     mkdir --mode=733 /var/lib/php/uoj_sessions && chmod +t /var/lib/php/uoj_sessions
-    sed -i -e '912a\extension=v8js.so\nextension=yaml.so' /etc/php/7.4/apache2/php.ini
+    sed -i -e '912a\extension=yaml.so' /etc/php/7.4/apache2/php.ini
 	sed -i 's|;sys_temp_dir = "/tmp"|sys_temp_dir = "/tmp"|g' /etc/php/7.4/apache2/php.ini
 }
 
