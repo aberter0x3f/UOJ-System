@@ -748,9 +748,10 @@ EOD
     							<label for="use_builtin_checker" class="col-sm-5 control-label">比对函数</label>
     							<div class="col-sm-7">
 								<select class="form-control" id="use_builtin_checker" name="use_builtin_checker">
+  									<option value="noi">NOI 风格比较器（忽略行末空格和文末换行）</option>
   									<option value="ncmp">单行整数序列</option>
   									<option value="wcmp">单行字符串序列</option>
-  									<option value="fcmp">多行数据（不忽略行末空格，但忽略文末回车）</option>
+  									<option value="fcmp">多行数据（不忽略行末空格，但忽略文末换行）</option>
 									<option value="ownchk">自定义校验器</option>
 								</select>
       								<!--<input type="hidden" class="form-control" id="use_builtin_checker" name="use_builtin_checker" placeholder="比对函数">-->
