@@ -175,7 +175,7 @@
 		
 		queryHackToJudge();
 		if ($hack) {
-			$submission = DB::selectFirst("select id, problem_id, content from submissions where id = {$hack['submission_id']} and score = 100");
+			$submission = DB::selectFirst("select id, problem_id, content from submissions where id = {$hack['submission_id']} and score >= 100");
 			if (!$submission) {
 				$details = "<error>the score gained by the hacked submission is not 100.\n</error>";
 				$esc_details = DB::escape(uojTextEncode($details));
