@@ -155,7 +155,7 @@ function queryContestData($contest, $config = array()) {
 			}
 			$row[0] = (int)$row[0];
 			$row[3] = $prob_pos[$row[3]];
-			$row[4] = (int)($r['final_result']['score']);
+			$row[4] = (float)($r['final_result']['score']);
 			$data[] = $row;
 		}
 	} else {
@@ -169,7 +169,7 @@ function queryContestData($contest, $config = array()) {
 		while ($row = DB::fetch($result, MYSQLI_NUM)) {
 			$row[0] = (int)$row[0];
 			$row[3] = $prob_pos[$row[3]];
-			$row[4] = (int)$row[4];
+			$row[4] = (float)$row[4];
 			$data[] = $row;
 		}
 	}

@@ -162,7 +162,7 @@
 		DB::query("update submissions set judge_time = NULL , result = '' , score = NULL , status = 'Waiting Rejudge' where problem_id = ${problem['id']}");
 	}
 	function rejudgeProblemAC($problem) {
-		DB::query("update submissions set judge_time = NULL , result = '' , score = NULL , status = 'Waiting Rejudge' where problem_id = ${problem['id']} and score = 100");
+		DB::query("update submissions set judge_time = NULL , result = '' , score = NULL , status = 'Waiting Rejudge' where problem_id = ${problem['id']} and score >= 100");
 	}
 	function rejudgeProblemGe97($problem) {
 		DB::query("update submissions set judge_time = NULL , result = '' , score = NULL , status = 'Waiting Rejudge' where problem_id = ${problem['id']} and score >= 97");
@@ -171,8 +171,8 @@
 		DB::query("update submissions set judge_time = NULL , result = '' , score = NULL , status = 'Waiting Rejudge' where id = ${submission['id']}");
 	}
 	function updateBestACSubmissions($username, $problem_id) {
-		$best = DB::selectFirst("select id, used_time, used_memory, tot_size from submissions where submitter = '$username' and problem_id = $problem_id and score = 100 order by used_time, used_memory, tot_size asc limit 1");
-		$shortest = DB::selectFirst("select id, used_time, used_memory, tot_size from submissions where submitter = '$username' and problem_id = $problem_id and score = 100 order by tot_size, used_time, used_memory asc limit 1");
+		$best = DB::selectFirst("select id, used_time, used_memory, tot_size from submissions where submitter = '$username' and problem_id = $problem_id and score >= 100 order by used_time, used_memory, tot_size asc limit 1");
+		$shortest = DB::selectFirst("select id, used_time, used_memory, tot_size from submissions where submitter = '$username' and problem_id = $problem_id and score >= 100 order by tot_size, used_time, used_memory asc limit 1");
 		DB::delete("delete from best_ac_submissions where submitter = '$username' and problem_id = $problem_id");
 		if ($best) {
 			DB::insert("insert into best_ac_submissions (problem_id, submitter, submission_id, used_time, used_memory, tot_size, shortest_id, shortest_used_time, shortest_used_memory, shortest_tot_size) values ($problem_id, '$username', ${best['id']}, ${best['used_time']}, ${best['used_memory']}, ${best['tot_size']}, ${shortest['id']}, ${shortest['used_time']}, ${shortest['used_memory']}, ${shortest['tot_size']})");
@@ -181,6 +181,6 @@
 		$cnt = DB::selectCount("select count(*) from best_ac_submissions where submitter='$username'");
 		DB::update("update user_info set ac_num = $cnt where username='$username'");
 		
-		DB::update("update problems set ac_num = (select count(*) from submissions where problem_id = problems.id and score = 100), submit_num = (select count(*) from submissions where problem_id = problems.id) where id = $problem_id");
+		DB::update("update problems set ac_num = (select count(*) from submissions where problem_id = problems.id and score >= 100), submit_num = (select count(*) from submissions where problem_id = problems.id) where id = $problem_id");
 	}
 ?>

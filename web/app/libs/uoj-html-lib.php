@@ -243,7 +243,7 @@ function echoSubmission($submission, $config, $user) {
 			if ($submission['score'] == null) {
 				echo '<a href="/submission/', $submission['id'], '" class="small">', $submission['result_error'], '</a>';
 			} else {
-				echo '<a href="/submission/', $submission['id'], '" class="uoj-score">', $submission['score'], '</a>';
+				echo '<a href="/submission/', $submission['id'], '" class="uoj-score">', (float)$submission['score'], '</a>';
 			}
 		} else {
 			echo '<a href="/submission/', $submission['id'], '" class="small">', $status, '</a>';

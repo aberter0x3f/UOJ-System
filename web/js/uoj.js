@@ -121,9 +121,9 @@ function getColOfRating(rating) {
 	return ColorConverter.toStr(ColorConverter.toRGB(new HSV(300 - (rating - 850) * 300 / 1650, 30 + (rating - 850) * 70 / 1650, 50 + (rating - 850) * 50 / 1650)));
 }
 function getColOfScore(score) {
-	if (score == 0) {
+	if (score <= 0) {
 		return ColorConverter.toStr(ColorConverter.toRGB(new HSV(0, 100, 80)));
-	} else if (score == 100) {
+	} else if (score >= 100) {
 		return ColorConverter.toStr(ColorConverter.toRGB(new HSV(120, 100, 80)));
 	} else {
 		return ColorConverter.toStr(ColorConverter.toRGB(new HSV(30 + score * 60 / 100, 100, 90)));

@@ -319,7 +319,7 @@ CREATE TABLE `contests_submissions` (
   `submitter` varchar(20) NOT NULL,
   `problem_id` int(11) NOT NULL,
   `submission_id` int(11) NOT NULL,
-  `score` int(11) NOT NULL,
+  `score` DECIMAL(15, 10) NOT NULL,
   `penalty` int(11) NOT NULL,
   PRIMARY KEY (`contest_id`,`submitter`,`problem_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
@@ -591,7 +591,7 @@ CREATE TABLE `submissions` (
   `result` blob NOT NULL,
   `status` varchar(20) NOT NULL,
   `result_error` varchar(20) DEFAULT NULL,
-  `score` int(11) DEFAULT NULL,
+  `score` DECIMAL(15, 10) DEFAULT NULL,
   `used_time` int(11) NOT NULL DEFAULT '0',
   `used_memory` int(11) NOT NULL DEFAULT '0',
   `is_hidden` tinyint(1) NOT NULL,
