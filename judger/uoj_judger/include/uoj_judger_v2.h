@@ -2127,7 +2127,7 @@ public:
             map<int, SubtaskInfo> subtasks;
             map<int, int> minScore;
             for (int t = 1; t <= nT; t++) {
-                string subtaskType = conf_str("subtask_type", t, "packed");
+                string subtaskType = conf_str("subtask_type", t, "min");
                 int startI = conf_int("subtask_end", t - 1, 0) + 1;
                 int endI = conf_int("subtask_end", t, 0);
 

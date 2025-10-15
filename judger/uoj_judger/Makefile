@@ -13,6 +13,7 @@ EXE_CHECKER = \
 	builtin/checker/icmp \
 	builtin/checker/lcmp \
 	builtin/checker/ncmp \
+	builtin/checker/noi \
 	builtin/checker/rcmp \
 	builtin/checker/rcmp4 \
 	builtin/checker/rcmp6 \
