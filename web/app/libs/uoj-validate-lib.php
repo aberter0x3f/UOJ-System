@@ -47,3 +47,7 @@ function validateUploadedFile($name) {
 function validateIP($ip) {
 	return filter_var($ip, FILTER_VALIDATE_IP) !== false;
 }
+
+function validateScore($score) {
+    return is_string($score) && is_numeric($score) && $score >= 0 && $score <= 100;
+}

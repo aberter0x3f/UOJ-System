@@ -17,24 +17,20 @@
 
 	function scoreDistributionData() {
 		$data = array();
-		$result = DB::select("select score, count(*) from submissions where problem_id = {$_GET['id']} and score is not null group by score");
+		$result = DB::select("select floor(score) as score, count(*) from submissions where problem_id = {$_GET['id']} and score is not null group by floor(score)");
 		$is_res_empty = true;
 		$has_score_0 = false;
 		$has_score_100 = false;
 		while ($row = DB::fetch($result, MYSQLI_NUM)) {
-			if ($row[0] == 0) {
+			if ((int)$row[0] == 0) {
 				$has_score_0 = true;
-			} elseif ($row[0] == 100) {
+			} elseif ((int)$row[0] == 100) {
 				$has_score_100 = true;
 			}
-			$score = $row[0] * 100;
-			$data[] = array('score' => $score, 'count' => $row[1]);
+			$data[] = array('score' => (int)$row[0], 'count' => (int)$row[1]);
 		}
 		if (!$has_score_0) {
 			array_unshift($data, array('score' => 0, 'count' => 0));
-		}
-		if (!$has_score_100) {
-			$data[] = array('score' => 10000, 'count' => 0);
 		}
 		return $data;
 	}
@@ -42,9 +38,6 @@
 	$data = scoreDistributionData();
 	$pre_data = $data;
 	$suf_data = $data;
-	for ($i = 0; $i < count($data); $i++) {
-		$data[$i]['score'] /= 100;
-	}
 	for ($i = 1; $i < count($data); $i++) {
 		$pre_data[$i]['count'] += $pre_data[$i - 1]['count'];
 	}
@@ -103,8 +96,13 @@ new Morris.Bar({
 	labels: ['number'],
 	hoverCallback: function(index, options, content, row) {
 		var scr = row.score;
-		return '<div class="morris-hover-row-label">' + 'score: ' + scr + '</div>' +
-			'<div class="morris-hover-point">' + '<a href="/submissions?problem_id=' + <?= $problem['id'] ?> + '&amp;min_score=' + scr + '&amp;max_score=' + scr + '">' + 'number: ' + row.count + '</a>' + '</div>';
+		// Link to the range [scr, scr+1), which corresponds to floor(score) == scr.
+		// The search is inclusive, so we use a max_score just below scr+1.
+		// For the score 100 bucket, the range is exactly [100, 100].
+		var max_scr = (scr == 100) ? 100 : scr + (1.0 - 1.0e-12);
+		var label = (scr == 100) ? '100' : ('[' + scr + ', ' + (scr+1) + ')');
+		return '<div class="morris-hover-row-label">' + 'Score: ' + label + '</div>' +
+			'<div class="morris-hover-point">' + '<a href="/submissions?problem_id=' + <?= $problem['id'] ?> + '&amp;min_score=' + scr + '&amp;max_score=' + max_scr + '">' + 'number: ' + row.count + '</a>' + '</div>';
 	},
 	resize: true
 });
@@ -123,13 +121,13 @@ new Morris.Line({
 		if (type == 'line') {
 			return '#0b62a4';
 		}
-		return getColOfScore(row.src.score / 100);
+		return getColOfScore(row.src.score);
 	},
 	xLabelFormat: function(x) {
 		return (x.getTime() / 100).toString();
 	},
 	hoverCallback: function(index, options, content, row) {
-		var scr = row.score / 100;
+		var scr = row.score;
 		return '<div class="morris-hover-row-label">' + 'score: &le;' + scr + '</div>' +
 			'<div class="morris-hover-point">' + '<a href="/submissions?problem_id=' + <?= $problem['id'] ?> + '&amp;max_score=' + scr + '">' + 'number: ' + row.count + '</a>' + '</div>';
 	},
@@ -150,13 +148,13 @@ new Morris.Line({
 		if (type == 'line') {
 			return '#0b62a4';
 		}
-		return getColOfScore(row.src.score / 100);
+		return getColOfScore(row.src.score);
 	},
 	xLabelFormat: function(x) {
 		return (x.getTime() / 100).toString();
 	},
 	hoverCallback: function(index, options, content, row) {
-		var scr = row.score / 100;
+		var scr = row.score;
 		return '<div class="morris-hover-row-label">' + 'score: &ge;' + scr + '</div>' +
 			'<div class="morris-hover-point">' + '<a href="/submissions?problem_id=' + <?= $problem['id'] ?> + '&amp;min_score=' + scr + '">' + 'number: ' + row.count + '</a>' + '</div>';
 	},
