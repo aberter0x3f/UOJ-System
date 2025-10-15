@@ -850,7 +850,7 @@ SubtaskMetaInfo conf_subtask_meta_info(string pre, const int &num) {
         meta.points_id.push_back(i);
     }
 
-    meta.subtask_type = conf_str(pre + "subtask_type", num, "packed");
+    meta.subtask_type = conf_str(pre + "subtask_type", num, "min");
     meta.subtask_used_time_type = conf_str(pre + "subtask_used_time_type", num, "sum");
     meta.full_score = conf_score(pre + "subtask_score", num, 100.0 / nT);
     if (conf_str("subtask_dependence", num, "none") == "many") {
