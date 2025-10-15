@@ -30,7 +30,7 @@
 		die();
 	}
 
-	$hackable = $submission['score'] == 100 && $problem['hackable'] == 1;
+	$hackable = $submission['score'] >= 100 && $problem['hackable'] == 1;
 	if ($hackable) {
 		$hack_form = new UOJForm('hack');
 

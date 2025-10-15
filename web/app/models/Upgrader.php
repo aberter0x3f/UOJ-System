@@ -7,6 +7,7 @@ class Upgrader {
 		
 	public static function runSQL($filename) {
 		passthru('mysql '.escapeshellarg(UOJConfig::$data['database']['database'])
+		        .' -h '.escapeshellarg(UOJConfig::$data['database']['host'])
 		        .' -u '.escapeshellarg(UOJConfig::$data['database']['username'])
 		        .' --password='.escapeshellarg(UOJConfig::$data['database']['password'])
 		        .'<'.escapeshellarg($filename), $ret);
