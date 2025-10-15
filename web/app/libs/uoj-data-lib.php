@@ -122,7 +122,7 @@
 
 			if ($rs != 0 || $exit_code != 0) {
 				if ($rs == 0) {
-					throw new Exception("<strong>$name</strong> : compile error<pre>\n" . uojFilePreview("{$this->prepare_dir}/compiler_result.txt", 100) . "\n</pre>");
+					throw new Exception("<strong>$name</strong> : compile error<pre>\n" . uojFilePreview("{$this->prepare_dir}/compiler_result.txt", 4096) . "\n</pre>");
 				} elseif ($rs == 7) {
 					throw new Exception("<strong>$name</strong> : compile error. No comment");
 				} else {
@@ -149,7 +149,7 @@
 			
 			if ($rs != 0 || $exit_code != 0) {
 				if ($rs == 0) {
-					throw new Exception("<strong>Makefile</strong> : compile error<pre>\n" . uojFilePreview("{$this->prepare_dir}/makefile_result.txt", 100) . "\n</pre>");
+					throw new Exception("<strong>Makefile</strong> : compile error<pre>\n" . uojFilePreview("{$this->prepare_dir}/makefile_result.txt", 4096) . "\n</pre>");
 				} elseif ($rs == 7) {
 					throw new Exception("<strong>Makefile</strong> : compile error. No comment");
 				} else {
