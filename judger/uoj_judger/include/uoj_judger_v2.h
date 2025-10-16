@@ -503,7 +503,9 @@ public:
 		}
 	}
 
-	virtual const char *what() const noexcept override { return this->info.c_str(); }
+	virtual const char *what() const noexcept override {
+		return this->info.c_str();
+	}
 };
 
 /*==================== parameter End ================== */
@@ -548,7 +550,9 @@ string conf_str(const string &key, const string &val) {
 	}
 	return uconfig[key];
 }
-string conf_str(const string &key) { return conf_str(key, ""); }
+string conf_str(const string &key) {
+	return conf_str(key, "");
+}
 int conf_int(const string &key, const int &val) {
 	if (uconfig.count(key) == 0) {
 		return val;
@@ -563,7 +567,9 @@ int conf_int(const string &key, int num, const int &val) {
 	}
 	return atoi(uconfig[sout.str()].c_str());
 }
-int conf_int(const string &key) { return conf_int(key, 0); }
+int conf_int(const string &key) {
+	return conf_int(key, 0);
+}
 double conf_double(const string &key, const double &val) {
 	if (uconfig.count(key) == 0) {
 		return val;
@@ -578,7 +584,9 @@ double conf_double(const string &key, int num, const double &val) {
 	}
 	return stod(uconfig[sout.str()]);
 }
-double conf_double(const string &key) { return conf_double(key, 0); }
+double conf_double(const string &key) {
+	return conf_double(key, 0);
+}
 string conf_file_name_with_num(string s, int num) {
 	ostringstream name;
 	if (num < 0) {
@@ -587,8 +595,12 @@ string conf_file_name_with_num(string s, int num) {
 	name << conf_str(s + "_pre", s) << abs(num) << "." << conf_str(s + "_suf", "txt");
 	return name.str();
 }
-string conf_input_file_name(int num) { return conf_file_name_with_num("input", num); }
-string conf_output_file_name(int num) { return conf_file_name_with_num("output", num); }
+string conf_input_file_name(int num) {
+	return conf_file_name_with_num("input", num);
+}
+string conf_output_file_name(int num) {
+	return conf_file_name_with_num("output", num);
+}
 runp::limits_t conf_run_limit(string pre, const int &num, const runp::limits_t &val) {
 	if (!pre.empty()) {
 		pre += "_";
@@ -610,7 +622,9 @@ void conf_add(const string &key, const string &val) {
 	}
 	uconfig[key] = val;
 }
-bool conf_has(const string &key) { return uconfig.count(key); }
+bool conf_has(const string &key) {
+	return uconfig.count(key);
+}
 bool conf_is(const string &key, const string &val) {
 	return uconfig.count(key) && uconfig[key] == val;
 }
@@ -1303,7 +1317,9 @@ bool TestPoint::add_info_block(const string &fkey) {
 	return true;
 }
 
-bool TestPoint::check() { return po.info.empty() || po.scr == 100; }
+bool TestPoint::check() {
+	return po.info.empty() || po.scr == 100;
+}
 
 bool TestPoint::prepare_io() {
 	try {
@@ -1899,7 +1915,9 @@ CustomTestInfo ordinary_custom_test(const string &name) {
 }
 */
 
-int scale_score(int scr100, int full) { return scr100 * full / 100; }
+int scale_score(int scr100, int full) {
+	return scr100 * full / 100;
+}
 
 /*======================  test End   ================== */
 
@@ -2048,17 +2066,29 @@ protected:
 	}
 
 public:
-	virtual int n_tests() { return conf_int("n_tests", 10); }
+	virtual int n_tests() {
+		return conf_int("n_tests", 10);
+	}
 
-	virtual int n_ex_tests() { return conf_int("n_ex_tests", 0); }
+	virtual int n_ex_tests() {
+		return conf_int("n_ex_tests", 0);
+	}
 
-	virtual int n_sample_tests() { return conf_int("n_sample_tests", 0); }
+	virtual int n_sample_tests() {
+		return conf_int("n_sample_tests", 0);
+	}
 
-	virtual int sample_test_point_score(int num) { return 100 / this->n_sample_tests(); }
+	virtual int sample_test_point_score(int num) {
+		return 100 / this->n_sample_tests();
+	}
 
-	virtual bool is_hack_enabled() { return true; }
+	virtual bool is_hack_enabled() {
+		return true;
+	}
 
-	virtual bool is_custom_test_enabled() { return true; }
+	virtual bool is_custom_test_enabled() {
+		return true;
+	}
 
 	virtual void ordinary_test() {
 		int n = conf_int("n_tests", 10);
@@ -2336,17 +2366,25 @@ protected:
 	}
 
 public:
-	virtual int n_ex_tests() override { return 0; }
+	virtual int n_ex_tests() override {
+		return 0;
+	}
 
-	virtual int n_sample_tests() override { return this->n_tests(); }
+	virtual int n_sample_tests() override {
+		return this->n_tests();
+	}
 
 	virtual int sample_test_point_score(int num) override {
 		return conf_int("point_score", num, 100 / this->n_sample_tests());
 	}
 
-	virtual bool is_hack_enabled() override { return false; }
+	virtual bool is_hack_enabled() override {
+		return false;
+	}
 
-	virtual bool is_custom_test_enabled() override { return false; }
+	virtual bool is_custom_test_enabled() override {
+		return false;
+	}
 };
 
 /*====================== judger end  ================== */

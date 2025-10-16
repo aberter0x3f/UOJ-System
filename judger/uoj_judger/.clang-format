@@ -40,3 +40,7 @@ Cpp11BracedListStyle: true
 
 # 将 public/private/protected 访问修饰符向左缩进
 AccessModifierOffset: -4
+
+# 禁止短非空语句放在同一行
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty

@@ -23,7 +23,9 @@
 #define UOJ_JDK "/usr/lib/jvm/java-21-openjdk-amd64"
 #define UOJ_JAVA_VERSION "21"
 
-std::string escapeshellarg(int arg) { return std::to_string(arg); }
+std::string escapeshellarg(int arg) {
+	return std::to_string(arg);
+}
 std::string escapeshellarg(double arg) {
 	std::ostringstream sout;
 	sout << std::setprecision(15) << arg;
@@ -462,5 +464,7 @@ struct config {
 /*
  * @return interaction return value
  **/
-int run(const config &ric) { return execute(ric.get_cmd().c_str()); }
+int run(const config &ric) {
+	return execute(ric.get_cmd().c_str());
+}
 }  // namespace runp::interaction

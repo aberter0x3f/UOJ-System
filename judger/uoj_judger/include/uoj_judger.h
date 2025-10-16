@@ -368,8 +368,10 @@ public:
 	SCORE_OP(-=)
 #undef SCORE_OP
 
-#define SCORE_OP(x) \
-	inline score_t operator x() { return x __scr; }
+#define SCORE_OP(x)               \
+	inline score_t operator x() { \
+		return x __scr;           \
+	}
 	SCORE_OP(-)
 	SCORE_OP(+)
 #undef SCORE_OP
@@ -383,9 +385,13 @@ public:
 		}
 	}
 
-	explicit inline operator int() const { return (int)round(__scr); }
+	explicit inline operator int() const {
+		return (int)round(__scr);
+	}
 
-	explicit inline operator double() const { return __scr; }
+	explicit inline operator double() const {
+		return __scr;
+	}
 
 	friend inline ostream &operator<<(ostream &out, const score_t &scr) {
 		auto default_prec = out.precision();
@@ -529,7 +535,9 @@ struct SubtaskInfo {
 	vector<PointInfo> points;
 
 	SubtaskInfo() = default;
-	SubtaskInfo(const SubtaskMetaInfo &meta) : meta(meta) { scr = meta.full_score; }
+	SubtaskInfo(const SubtaskMetaInfo &meta) : meta(meta) {
+		scr = meta.full_score;
+	}
 
 	inline void update_stats(int _ust, int _usm) {
 		if (_ust >= 0) {
@@ -754,7 +762,9 @@ string conf_str(const string &key, const string &val) {
 	}
 	return config[key];
 }
-string conf_str(const string &key) { return conf_str(key, ""); }
+string conf_str(const string &key) {
+	return conf_str(key, "");
+}
 int conf_int(const string &key, const int &val) {
 	if (config.count(key) == 0) {
 		return val;
@@ -769,7 +779,9 @@ int conf_int(const string &key, int num, const int &val) {
 	}
 	return atoi(config[sout.str()].c_str());
 }
-int conf_int(const string &key) { return conf_int(key, 0); }
+int conf_int(const string &key) {
+	return conf_int(key, 0);
+}
 double conf_double(const string &key, const double &val) {
 	if (config.count(key) == 0) {
 		return val;
@@ -784,7 +796,9 @@ double conf_double(const string &key, int num, const double &val) {
 	}
 	return stod(config[sout.str()]);
 }
-double conf_double(const string &key) { return conf_double(key, 0); }
+double conf_double(const string &key) {
+	return conf_double(key, 0);
+}
 score_t conf_score(const string &key, const score_t &val) {
 	return score_t(conf_double(key, double(val))).rounded_score();
 }
@@ -799,8 +813,12 @@ string conf_file_name_with_num(const string &s, int num) {
 	name << conf_str(s + "_pre", s) << std::abs(num) << "." << conf_str(s + "_suf", "txt");
 	return name.str();
 }
-string conf_input_file_name(int num) { return conf_file_name_with_num("input", num); }
-string conf_output_file_name(int num) { return conf_file_name_with_num("output", num); }
+string conf_input_file_name(int num) {
+	return conf_file_name_with_num("input", num);
+}
+string conf_output_file_name(int num) {
+	return conf_file_name_with_num("output", num);
+}
 runp::limits_t conf_run_limit(string pre, const int &num, const runp::limits_t &val) {
 	if (!pre.empty()) {
 		pre += "_";
@@ -847,12 +865,16 @@ SubtaskMetaInfo conf_subtask_meta_info(string pre, const int &num) {
 	}
 	return meta;
 }
-SubtaskMetaInfo conf_subtask_meta_info(const int &num) { return conf_subtask_meta_info("", num); }
+SubtaskMetaInfo conf_subtask_meta_info(const int &num) {
+	return conf_subtask_meta_info("", num);
+}
 void conf_add(const string &key, const string &val) {
 	if (config.count(key)) return;
 	config[key] = val;
 }
-bool conf_has(const string &key) { return config.count(key) != 0; }
+bool conf_has(const string &key) {
+	return config.count(key) != 0;
+}
 bool conf_is(const string &key, const string &val) {
 	if (config.count(key) == 0) return false;
 	return config[key] == val;
@@ -862,8 +884,12 @@ bool conf_is(const string &key, const string &val) {
 
 /*====================== info print =================== */
 
-inline string info_str(int id) { return runp::rstype_str((runp::RS_TYPE)id); }
-inline string info_str(const RunResult &p) { return info_str(p.type); }
+inline string info_str(int id) {
+	return runp::rstype_str((runp::RS_TYPE)id);
+}
+inline string info_str(const RunResult &p) {
+	return info_str(p.type);
+}
 
 void add_point_info(const PointInfo &info, bool update_tot_score = true) {
 	if (info.num >= 0) {
@@ -1107,7 +1133,9 @@ RunResult run_program(const runp::config &rpc) {
 }
 
 // @return interaction return value
-int run_interaction(const RunInteractionConfig &ric) { return runp::interaction::run(ric); }
+int run_interaction(const RunInteractionConfig &ric) {
+	return runp::interaction::run(ric);
+}
 
 RunResult run_program(const char *run_program_result_file_name, const char *input_file_name,
                       const char *output_file_name, const char *error_file_name,

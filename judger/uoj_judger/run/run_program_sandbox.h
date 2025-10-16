@@ -53,9 +53,13 @@ struct syscall_info {
 	syscall_info(unsigned extra_check, int max_cnt) :
 	    extra_check((EX_CHECK_TYPE)extra_check), max_cnt(max_cnt) {}
 
-	static syscall_info unlimited() { return syscall_info(ECT_NONE, -1); }
+	static syscall_info unlimited() {
+		return syscall_info(ECT_NONE, -1);
+	}
 
-	static syscall_info count_based(int max_cnt) { return syscall_info(ECT_CNT, max_cnt); }
+	static syscall_info count_based(int max_cnt) {
+		return syscall_info(ECT_CNT, max_cnt);
+	}
 
 	static syscall_info with_extra_check(unsigned extra_check, int max_cnt = -1) {
 		if (max_cnt != -1) {

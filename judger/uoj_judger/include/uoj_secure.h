@@ -23,10 +23,14 @@ using namespace std;
 struct sha256_t {
 	u8 sum[32];
 
-	string to_str() { return string((char *)sum, 32); }
+	string to_str() {
+		return string((char *)sum, 32);
+	}
 };
 
-inline u32 uoj_sha2_rotr(u32 x, int n) { return x >> n | x << (32 - n); }
+inline u32 uoj_sha2_rotr(u32 x, int n) {
+	return x >> n | x << (32 - n);
+}
 
 void uoj_sha256_chunk(u8 *chunk, u32 *hs) {
 	static const u32 k[] = {0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
@@ -113,7 +117,9 @@ sha256_t uoj_sha256(int n, u8 *m) {
 	}
 	return sum;
 }
-sha256_t uoj_sha256(const string &m) { return uoj_sha256((int)m.length(), (u8 *)m.data()); }
+sha256_t uoj_sha256(const string &m) {
+	return uoj_sha256((int)m.length(), (u8 *)m.data());
+}
 
 sha256_t uoj_hmac(const string &k, const string &m) {
 	string ki = k, ko = k;
@@ -156,7 +162,9 @@ class uoj_mt_rand_engine {
 	}
 
 public:
-	uoj_mt_rand_engine(u64 seed) { init(seed); }
+	uoj_mt_rand_engine(u64 seed) {
+		init(seed);
+	}
 	uoj_mt_rand_engine(const string &s) {
 		sha256_t sum = uoj_sha256(s);
 
@@ -198,7 +206,9 @@ public:
 	uoj_cipher() {}
 	uoj_cipher(const string &_key) : key(_key) {}
 
-	void set_key(const string &_key) { key = _key; }
+	void set_key(const string &_key) {
+		key = _key;
+	}
 
 	void encrypt(string &m) {
 		uoj_mt_rand_engine rnd(key);
@@ -292,7 +302,9 @@ public:
 		in.str(input_m);
 	}
 
-	string input() { return input_m; }
+	string input() {
+		return input_m;
+	}
 
 	UOJ_NORETURN void end(string m) {
 		memcpy(stdout, &true_outf, sizeof(FILE));
@@ -312,6 +324,8 @@ public:
 		exit(0);
 	}
 
-	UOJ_NORETURN void end() { end(""); }
+	UOJ_NORETURN void end() {
+		end("");
+	}
 };
 }  // namespace

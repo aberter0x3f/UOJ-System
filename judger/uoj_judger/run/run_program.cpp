@@ -361,7 +361,9 @@ std::string get_usage_summary(struct rusage *rusep) {
 	return sout.str();
 }
 
-void stop_child(pid_t pid) { kill(pid, SIGKILL); }
+void stop_child(pid_t pid) {
+	kill(pid, SIGKILL);
+}
 
 void stop_all(runp::result res) {
 	struct rusage tmp, ruse, *rusep = ruse0p;
