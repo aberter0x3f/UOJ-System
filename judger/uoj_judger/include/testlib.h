@@ -164,12 +164,20 @@ const char *latestFeatures[] = {
 #endif
 
 /* Overrides random() for Borland C++. */
+#ifdef __EMSCRIPTEN__
+#define srand __srand_deprecated
+#define rand __rand_deprecated
+#endif
 #define random __random_deprecated
 #include <stdlib.h>
 #include <cstdlib>
 #include <climits>
 #include <algorithm>
 #undef random
+#ifdef __EMSCRIPTEN__
+#undef rand
+#undef srand
+#endif
 
 #include <cstdio>
 #include <cctype>
@@ -188,6 +196,10 @@ const char *latestFeatures[] = {
 #include <fcntl.h>
 #include <functional>
 #include <cstdint>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 #ifdef TESTLIB_THROW_EXIT_EXCEPTION_INSTEAD_OF_EXIT
 #   include <exception>
@@ -315,7 +327,7 @@ const char *latestFeatures[] = {
 #   define NORETURN
 #endif
 
-static char __testlib_format_buffer[16777216];
+static char __testlib_format_buffer[1024];
 static int __testlib_format_buffer_usage_count = 0;
 
 #define FMT_TO_RESULT(fmt, cstr, result)  std::string result;                              \
@@ -667,14 +679,24 @@ void prepareOpts(int argc, char* argv[]);
 #endif
 
 FILE* testlib_fopen_(const char* path, const char* mode) {
-#ifdef _MSC_VER
+#if defined (_MSC_VER)
     FILE* result = NULL;
     if (fopen_s(&result, path, mode) != 0)
         return NULL;
     else
         return result;
+#elif defined (__EMSCRIPTEN__)
+    EM_ASM(
+        try {
+            FS.stat('/cwd');
+        } catch (e) {
+            FS.mkdir('/cwd');
+            FS.mount(NODEFS, { root: '.' }, '/cwd');
+        }
+    );
+    return fopen((std::string("/cwd/") + name).c_str(), mode);
 #else
-        return std::fopen(path, mode);
+	return std::fopen(path, mode);
 #endif
 }
 
@@ -3296,9 +3318,19 @@ void InStream::reset(std::FILE *file) {
 }
 
 void InStream::init(std::string fileName, TMode mode) {
+    FILE *file = NULL;
     opened = false;
-    name = fileName;
-    stdfile = false;
+    if (fileName == "/dev/stdin")
+    {
+        name = "stdin";
+        file = stdin;
+        stdfile = true;
+    }
+    else
+    {
+        name = fileName;
+        stdfile = false;
+    }
     this->mode = mode;
 
     std::ifstream stream;
@@ -3316,7 +3348,7 @@ void InStream::init(std::string fileName, TMode mode) {
             quitf(_pe, "File size exceeds %d bytes, size is %d", int(maxFileSize), int(fileSize));
     }
 
-    reset();
+    reset(file);
 }
 
 void InStream::init(std::FILE *f, TMode mode) {
@@ -4724,9 +4756,11 @@ void registerInteraction(int argc, char *argv[]) {
 
     inf.init(argv[1], _input);
 
-    tout.open(argv[2], std::ios_base::out);
-    if (tout.fail() || !tout.is_open())
-        quit(_fail, std::string("Can not write to the test-output-file '") + argv[2] + std::string("'"));
+    if (strcmp(argv[2], "stdout") != 0 && strcmp(argv[2], "/dev/stdin") != 0) {
+        tout.open(argv[2], std::ios_base::out);
+        if (tout.fail() || !tout.is_open())
+            quit(_fail, std::string("Can not write to the test-output-file '") + argv[2] + std::string("'"));
+    }
 
     ouf.init(stdin, _output);
 
@@ -4917,7 +4951,9 @@ void registerTestlibCmd(int argc, char *argv[]) {
 
     inf.init(args[1], _input);
     ouf.init(args[2], _output);
-    ouf.skipBom();
+	if (args[2] != std::string("/dev/stdin")) {
+		ouf.skipBom();
+	}
     ans.init(args[3], _answer);
 }
 

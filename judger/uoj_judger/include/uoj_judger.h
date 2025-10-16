@@ -1267,7 +1267,7 @@ RunSimpleInteractionResult run_simple_interaction(
 	irpc.output_file_name = "stdout";
 	irpc.error_file_name = result_path + "/interactor_error.txt";
 	irpc.limit = ilimit;
-	irpc.set_argv("interactor", input_file_name.c_str(), "/dev/null", answer_file_name.c_str(),
+	irpc.set_argv("interactor", input_file_name.c_str(), "/dev/stdin", answer_file_name.c_str(),
 	              NULL);
 	irpc.type = conf_str("interactor_run_type", "default");
 

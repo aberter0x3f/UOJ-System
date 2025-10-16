@@ -961,7 +961,7 @@ run_simple_interaction_result run_simple_interaction(const string &input_file_na
 	irpc.output_file_name = "stdout";
 	irpc.error_file_name = result_path / "interactor_error.txt";
 	irpc.program_name = data_path / "interactor";
-	irpc.rest_args = {input_file_name, "/dev/null", answer_file_name};
+	irpc.rest_args = {input_file_name, "/dev/stdin", answer_file_name};
 	irpc.limits.real_time = rpc.limits.real_time = rpc.limits.time + irpc.limits.time + 1;
 
 	runp::interaction::config ric;
