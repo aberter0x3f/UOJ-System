@@ -1453,8 +1453,34 @@ bool TestPoint::run_custom(const string &id, const string &input, const string &
         throw jgf_error("PRGNF");  // program not found
     }
 
-    runp::result ret =
-        run_submission_program(get_program(id), fname[input + ".raw"], fname[output + ".raw"]);
+    runp::result ret;
+    runp::config rpc = get_program(id);
+
+    string prob_input_file = conf_str("input_file_name", "");
+    string prob_output_file = conf_str("output_file_name", "");
+
+    if (!conf_is("interaction_mode", "on")) {
+        string run_input = fname[input + ".raw"];
+        string run_output = fname[output + ".raw"];
+        if (!prob_input_file.empty()) {
+            rpc.readable_file_names.push_back(work_path / prob_input_file);
+            file_copy(fname[input + ".raw"], work_path / prob_input_file);
+            run_input = "/dev/null";
+        }
+        if (!prob_output_file.empty()) {
+            rpc.writable_file_names.push_back(work_path / prob_output_file);
+            run_output = "/dev/null";
+            FILE *file = fopen((work_path / prob_output_file).c_str(), "w");
+            fclose(file);
+        }
+        ret = run_submission_program(rpc, run_input, run_output);
+        if (!prob_output_file.empty()) {
+            file_copy(work_path / prob_output_file, fname[output + ".raw"]);
+        }
+    } else {
+        ret = run_submission_program(rpc, fname[input + ".raw"], fname[output + ".raw"]);
+    }
+
     set_res_if_empty(ret.extra);
     if (ret.type != runp::RS_AC) {
         set_info_if_empty(runp::rstype_str(ret.type));
@@ -1580,8 +1606,34 @@ protected:
             return false;
         }
 
-        runp::result ret =
-            run_submission_program(get_program("answer"), fname["input.raw"], fname["output.raw"]);
+        runp::result ret;
+        runp::config rpc = get_program("answer");
+
+        string prob_input_file = conf_str("input_file_name", "");
+        string prob_output_file = conf_str("output_file_name", "");
+
+        if (!conf_is("interaction_mode", "on")) {
+            string run_input = fname["input.raw"];
+            string run_output = fname["output.raw"];
+            if (!prob_input_file.empty()) {
+                rpc.readable_file_names.push_back(work_path / prob_input_file);
+                file_copy(fname["input.raw"], work_path / prob_input_file);
+                run_input = "/dev/null";
+            }
+            if (!prob_output_file.empty()) {
+                rpc.writable_file_names.push_back(work_path / prob_output_file);
+                run_output = "/dev/null";
+                FILE *file = fopen((work_path / prob_output_file).c_str(), "w");
+                fclose(file);
+            }
+            ret = run_submission_program(rpc, run_input, run_output);
+            if (!prob_output_file.empty()) {
+                file_copy(work_path / prob_output_file, fname["output.raw"]);
+            }
+        } else {
+            ret = run_submission_program(rpc, fname["input.raw"], fname["output.raw"]);
+        }
+
         if (ret.type != runp::RS_AC) {
             set_info_if_empty(runp::rstype_str(ret.type));
             set_res_if_empty(ret.extra);
