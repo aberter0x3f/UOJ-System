@@ -9,7 +9,7 @@ BasedOnStyle: Google
 # ------------------------------------------------------------------------------
 
 # 核心缩进规则，与 .editorconfig 保持一致
-UseTab: ForIndentation
+UseTab: Never
 IndentWidth: 4
 TabWidth: 4
 ContinuationIndentWidth: 4

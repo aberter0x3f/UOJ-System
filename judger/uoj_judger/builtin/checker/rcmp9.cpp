@@ -1,27 +1,25 @@
-#include "testlib.h"
 #include <cmath>
+
+#include "testlib.h"
 
 using namespace std;
 
 const double EPS = 1E-9;
 
-int main(int argc, char * argv[])
-{
+int main(int argc, char *argv[]) {
     setName("compare two sequences of doubles, max absolute or relative error = %.10lf", EPS);
     registerTestlibCmd(argc, argv);
 
     int n = 0;
     double j, p;
 
-    while (!ans.seekEof()) 
-    {
+    while (!ans.seekEof()) {
         n++;
         j = ans.readDouble();
         p = ouf.readDouble();
-        if (!doubleCompare(j, p, EPS))
-        {
+        if (!doubleCompare(j, p, EPS)) {
             quitf(_wa, "%d%s numbers differ - expected: '%.7lf', found: '%.7lf', error = '%.7lf'",
-                n, englishEnding(n).c_str(), j, p, doubleDelta(j, p));
+                  n, englishEnding(n).c_str(), j, p, doubleDelta(j, p));
         }
     }
 
