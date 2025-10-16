@@ -9,6 +9,6 @@ end_of_line = lf
 indent_style = space
 indent_size = 2
 
-[{Dockerfile,*.py,judge_client}]
+[{Dockerfile,*.py,judge_client,testlib.h}]
 indent_style = space
 indent_size = 4

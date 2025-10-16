@@ -696,7 +696,7 @@ FILE* testlib_fopen_(const char* path, const char* mode) {
     );
     return fopen((std::string("/cwd/") + name).c_str(), mode);
 #else
-	return std::fopen(path, mode);
+    return std::fopen(path, mode);
 #endif
 }
 
@@ -4948,9 +4948,9 @@ void registerTestlibCmd(int argc, char *argv[]) {
 
     inf.init(args[1], _input);
     ouf.init(args[2], _output);
-	if (args[2] != std::string("/dev/stdin")) {
-		ouf.skipBom();
-	}
+    if (args[2] != std::string("/dev/stdin")) {
+        ouf.skipBom();
+    }
     ans.init(args[3], _answer);
 }
 
