@@ -1433,9 +1433,29 @@ PointInfo test_point(const string &name, const int &num, TestPointConfig tpc = T
     if (!conf_is("interaction_mode", "on")) {
         RunResult pro_ret;
         if (!tpc.submit_answer) {
-            pro_ret = run_submission_program(
-                tpc.disable_program_input ? "/dev/null" : tpc.input_file_name.c_str(),
-                tpc.output_file_name.c_str(), tpc.limit, name);
+            string prob_input_file = conf_str("input_file_name", "");
+            string prob_output_file = conf_str("output_file_name", "");
+
+            RunProgramConfig rpc;
+            string run_input = tpc.disable_program_input ? "/dev/null" : tpc.input_file_name;
+            string run_output = tpc.output_file_name;
+
+            if (!prob_input_file.empty()) {
+                rpc.readable_file_names.push_back(work_path + "/" + prob_input_file);
+                file_copy(tpc.input_file_name, work_path + "/" + prob_input_file);
+                run_input = "/dev/null";
+            }
+            if (!prob_output_file.empty()) {
+                rpc.writable_file_names.push_back(work_path + "/" + prob_output_file);
+                run_output = "/dev/null";
+                FILE *file = fopen((work_path + "/" + prob_output_file).c_str(), "w");
+                fclose(file);
+            }
+            pro_ret = run_submission_program(run_input, run_output, tpc.limit, name, rpc);
+            if (!prob_output_file.empty()) {
+                file_copy(work_path + "/" + prob_output_file, tpc.output_file_name);
+            }
+
             if (conf_has("token")) {
                 file_hide_token(tpc.output_file_name, conf_str("token", ""));
             }
@@ -1565,7 +1585,33 @@ CustomTestInfo ordinary_custom_test(const string &name, CustomTestConfig ctc = C
     string input_file_name = work_path + "/input.txt";
     string output_file_name = work_path + "/output.txt";
 
-    RunResult pro_ret = run_submission_program(input_file_name, output_file_name, lim, name);
+    RunResult pro_ret;
+    string prob_input_file = conf_str("input_file_name", "");
+    string prob_output_file = conf_str("output_file_name", "");
+
+    if (!conf_is("interaction_mode", "on")) {
+        RunProgramConfig rpc;
+        string run_input = input_file_name;
+        string run_output = output_file_name;
+        if (!prob_input_file.empty()) {
+            rpc.readable_file_names.push_back(work_path + "/" + prob_input_file);
+            file_copy(input_file_name, work_path + "/" + prob_input_file);
+            run_input = "/dev/null";
+        }
+        if (!prob_output_file.empty()) {
+            rpc.writable_file_names.push_back(work_path + "/" + prob_output_file);
+            FILE *file = fopen((work_path + "/" + prob_output_file).c_str(), "w");
+            fclose(file);
+            run_output = "/dev/null";
+        }
+        pro_ret = run_submission_program(run_input, run_output, lim, name, rpc);
+        if (!prob_output_file.empty()) {
+            file_copy(work_path + "/" + prob_output_file, output_file_name);
+        }
+    } else {
+        pro_ret = run_submission_program(input_file_name, output_file_name, lim, name);
+    }
+
     if (conf_has("token")) {
         file_hide_token(output_file_name, conf_str("token", ""));
     }
