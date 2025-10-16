@@ -208,13 +208,35 @@ EOD
 ?>
 <?php echoUOJPageHeader(HTML::stripTags($problem['title']) . ' - ' . UOJLocale::get('problems::problem')) ?>
 <?php
-	$limit = getUOJConf("/var/uoj_data/{$problem['id']}/problem.conf");
-	$time_limit = $limit['time_limit'];
-	$memory_limit = $limit['memory_limit'];
+	$problem_conf = getUOJConf("/var/uoj_data/{$problem['id']}/problem.conf");
+	$time_limit = $problem_conf['time_limit'];
+	$memory_limit = $problem_conf['memory_limit'];
+	$is_use_builtin_judger = $problem_conf['use_builtin_judger'] === 'on';
+	$builtin_checker = $problem_conf['use_builtin_checker'];
+	$is_interaction_mode = $problem_conf['interaction_mode'] === 'on';
+	$is_submit_answer = $problem_conf['submit_answer'] === 'on';
+	$input_file_name = $problem_conf['input_file_name'] ?? '';
+	$output_file_name = $problem_conf['output_file_name'] ?? '';
 ?>
 <div class="row d-flex justify-content-center">
-	<span class="badge badge-secondary mr-1">时间限制:<?=$time_limit!=null?(float)$time_limit." s":"N/A"?></span>
-	<span class="badge badge-secondary mr-1">空间限制:<?=$memory_limit!=null?"$memory_limit MB":"N/A"?></span>
+	<span class="badge badge-secondary mr-1">时间限制：<?=$time_limit!=null?(float)$time_limit." s":"N/A"?></span>
+	<span class="badge badge-secondary mr-1">空间限制：<?=$memory_limit!=null?"$memory_limit MB":"N/A"?></span>
+	<?php
+		if (!$is_use_builtin_judger) {
+			echo '<span class="badge badge-success mr-1">自定义 Judger</span>';
+		} elseif ($is_interaction_mode) {
+			echo '<span class="badge badge-success mr-1">标准 I/O 交互</span>';
+		} else {
+			if ($is_submit_answer) {
+				echo '<span class="badge badge-success mr-1">提交答案</span>';
+			}
+			echo '<span class="badge badge-secondary mr-1">比较器：' . ($builtin_checker != null ? $builtin_checker : "自定义比较器") . '</span>';
+			if (!$is_submit_answer) {
+				echo '<span class="badge badge-secondary mr-1">输入文件：' . ($input_file_name !== '' ? $input_file_name : "标准输入") . '</span>';
+				echo '<span class="badge badge-secondary mr-1">输出文件：' . ($output_file_name !== '' ? $output_file_name : "标准输出") . '</span>';
+			}
+		}
+	?>
 </div>
 <div class="float-right">
 	<?= getClickZanBlock('P', $problem['id'], $problem['zan']) ?>
