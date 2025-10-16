@@ -3320,14 +3320,11 @@ void InStream::reset(std::FILE *file) {
 void InStream::init(std::string fileName, TMode mode) {
     FILE *file = NULL;
     opened = false;
-    if (fileName == "/dev/stdin")
-    {
+    if (fileName == "/dev/stdin") {
         name = "stdin";
         file = stdin;
         stdfile = true;
-    }
-    else
-    {
+    } else {
         name = fileName;
         stdfile = false;
     }
