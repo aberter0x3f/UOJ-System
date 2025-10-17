@@ -1,6 +1,5 @@
 <?php
 
-$REQUIRE_LIB['shjs'] = "";
 $REQUIRE_LIB['dracula'] = "";
 $REQUIRE_LIB['base64'] = "";
 $REQUIRE_LIB['raphael'] = "";
