@@ -1,10 +1,10 @@
 <?php
 	requirePHPLib('form');
-	
+
 	if (!validateUInt($_GET['id']) || !($hack = queryHack($_GET['id']))) {
 		become404Page();
 	}
-	$submission = querySubmission($hack['submission_id']);	
+	$submission = querySubmission($hack['submission_id']);
 	$problem = queryProblemBrief($submission['problem_id']);
 	$problem_extra_config = getProblemExtraConfig($problem);
 
@@ -18,7 +18,7 @@
 	if (!isHackVisibleToUser($hack, $problem, $myUser)) {
 		become403Page();
 	}
-	
+
 	if (isSuperUser($myUser)) {
 		$delete_form = new UOJForm('delete');
 		$delete_form->handle = function() {
@@ -32,7 +32,7 @@
 		$delete_form->succ_href = "/hacks";
 		$delete_form->runAtServer();
 	}
-	
+
 	$should_show_content = hasViewPermission($problem_extra_config['view_content_type'], $myUser, $problem, $submission);
 	$should_show_all_details = hasViewPermission($problem_extra_config['view_all_details_type'], $myUser, $problem, $submission);
 	$should_show_details = hasViewPermission($problem_extra_config['view_details_type'], $myUser, $problem, $submission);
@@ -44,7 +44,7 @@
 		|| !isHackFullVisibleToUser($hack, $contest, $problem, $myUser)) {
 		$should_show_content = $should_show_all_details = false;
 	}
-	
+
 	if ($should_show_all_details) {
 		$styler = new HackDetailsStyler();
 		if (!$should_show_details) {
@@ -54,7 +54,7 @@
 	}
 ?>
 <?php
-	$REQUIRE_LIB['hljs'] = "";
+	$REQUIRE_LIB['prism'] = "";
 ?>
 <?php echoUOJPageHeader(UOJLocale::get('problems::hack').' #'.$hack['id']) ?>
 
