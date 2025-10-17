@@ -7,7 +7,7 @@ class UOJBlogEditor {
 	public $save;
 	public $cur_data = array();
 	public $post_data = array();
-	
+
 	public $label_text = array(
 		'title' => '标题',
 		'tags' => '标签（多个标签用逗号隔开）',
@@ -17,13 +17,13 @@ class UOJBlogEditor {
 		'private' => '未公开',
 		'public' => '公开'
 	);
-	
+
 	public $validator = array();
-	
+
 	function __construct() {
 		global $REQUIRE_LIB;
 		$REQUIRE_LIB['blog-editor'] = '';
-		
+
 		$this->validator = array(
 			'title' => function(&$title) {
 				if ($title == '') {
@@ -67,7 +67,7 @@ class UOJBlogEditor {
 			}
 		);
 	}
-	
+
 	public function validate($name) {
 		if (!isset($_POST["{$this->name}_{$name}"])) {
 			return '不能为空';
@@ -88,13 +88,13 @@ class UOJBlogEditor {
 			die(json_encode($errors));
 		}
 		crsf_defend();
-		
+
 		$this->post_data['is_hidden'] = isset($_POST["{$this->name}_is_hidden"]) ? 1 : 0;
-		
+
 		$purifier = HTML::pruifier();
-		
+
 		$this->post_data['title'] = HTML::escape($this->post_data['title']);
-		
+
 		if ($this->type == 'blog') {
 			$content_md = $_POST[$this->name . '_content_md'];
 			try {
@@ -118,7 +118,7 @@ class UOJBlogEditor {
 			if ($content_array === false || !is_array($content_array)) {
 				die(json_encode(array('content_md' => '不合法的 YAML 格式')));
 			}
-			
+
 			try {
 				$v8 = new V8Js('PHP');
 				$v8->executeString(file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/js/marked.js'), 'marked.js');
@@ -149,7 +149,7 @@ EOD
 			} catch (V8JsException $e) {
 				die(json_encode(array('content_md' => '未知错误')));
 			}
-			
+
 			$marked = function($md) use ($v8, $purifier) {
 				try {
 					$v8->md = $md;
@@ -158,7 +158,7 @@ EOD
 					die(json_encode(array('content_md' => '未知错误')));
 				}
 			};
-			
+
 			$config = array();
 			$this->post_data['content'] = '';
 			foreach ($content_array as $slide_name => $slide_content) {
@@ -170,9 +170,9 @@ EOD
 					}
 					continue;
 				}
-				
+
 				$this->post_data['content'] .= '<section>';
-				
+
 				if (is_string($slide_content)) {
 					$this->post_data['content'] .= $marked($slide_content);
 				} elseif (is_array($slide_content)) {
@@ -189,7 +189,7 @@ EOD
 			$this->post_data['content'] = json_encode($config) . "\n" . $this->post_data['content'];
 		}
 	}
-	
+
 	public function handleSave() {
 		$save = $this->save;
 		$this->receivePostData();
@@ -197,11 +197,11 @@ EOD
 		if (!$ret) {
 			$ret = array();
 		}
-		
+
 		if (isset($_POST['need_preview'])) {
 			ob_start();
 			if ($this->type == 'blog') {
-				echoUOJPageHeader('博客预览', array('ShowPageHeader' => false, 'REQUIRE_LIB' => array('mathjax' => '', 'hljs' => '')));
+				echoUOJPageHeader('博客预览', array('ShowPageHeader' => false, 'REQUIRE_LIB' => array('mathjax' => '', 'prism' => '')));
 				echo '<article>';
 				echo $this->post_data['content'];
 				echo '</article>';
@@ -218,10 +218,10 @@ EOD
 			$ret['html'] = ob_get_contents();
 			ob_end_clean();
 		}
-		
+
 		die(json_encode($ret));
 	}
-	
+
 	public function runAtServer() {
 		if (isset($_POST["save-{$this->name}"])) {
 			$this->handleSave();
