@@ -1,6 +1,6 @@
 <?php
 	requirePHPLib('form');
-	
+
 	if (!UOJContext::hasBlogPermission()) {
 		become403Page();
 	}
@@ -11,7 +11,7 @@
 	} else {
 		$blog = DB::selectFirst("select * from blogs where poster = '".UOJContext::user()['username']."' and type = 'S' and is_draft = true");
 	}
-	
+
 	$blog_editor = new UOJBlogEditor();
 	$blog_editor->type = 'slide';
 	$blog_editor->name = 'blog';
@@ -37,14 +37,14 @@
 	} else {
 		$blog_editor->blog_url = null;
 	}
-	
+
 	function updateBlog($id, $data) {
 		DB::update("update blogs set title = '".DB::escape($data['title'])."', content = '".DB::escape($data['content'])."', content_md = '".DB::escape($data['content_md'])."', is_hidden = {$data['is_hidden']} where id = {$id}");
 	}
 	function insertSlide($data) {
 		DB::insert("insert into blogs (type, title, content, content_md, poster, is_hidden, is_draft, post_time) values ('S', '".DB::escape($data['title'])."', '".DB::escape($data['content'])."', '".DB::escape($data['content_md'])."', '".Auth::id()."', {$data['is_hidden']}, {$data['is_draft']}, now())");
 	}
-	
+
 	$blog_editor->save = function($data) {
 		global $blog;
 		$ret = array();
@@ -74,12 +74,12 @@
 		}
 		return $ret;
 	};
-	
+
 	$blog_editor->runAtServer();
 ?>
 <?php echoUOJPageHeader('写幻灯片') ?>
 <div class="text-right">
-<a href="http://uoj.ac/blog/75">这玩意儿怎么用？</a>
+<a href="http://uoj.ac/blog/75" target="_blank" rel="noopener noreferrer">这玩意儿怎么用？</a>
 </div>
 <?php $blog_editor->printHTML() ?>
 <?php echoUOJPageFooter() ?>
