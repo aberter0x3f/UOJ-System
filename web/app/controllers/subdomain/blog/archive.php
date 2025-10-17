@@ -1,20 +1,20 @@
 <?php
 	requirePHPLib('form');
-	
+
 	$blogs_cond = "poster = '".UOJContext::userid()."' and is_draft = false";
 	if (!UOJContext::hasBlogPermission()) {
 		$blogs_cond .= " and is_hidden = false";
 	}
-	
+
 	$display_blogs_cond = $blogs_cond;
-	
+
 	if (isset($_GET['tag'])) {
 		$blog_tag_required = $_GET['tag'];
 		$display_blogs_cond .= " and '".DB::escape($blog_tag_required)."' in (select tag from blogs_tags where blogs_tags.blog_id = blogs.id)";
 	} else {
 		$blog_tag_required = null;
 	}
-	
+
 	$blogs_pag = new Paginator(array(
 		'col_names' => array('*'),
 		'table_name' => 'blogs',
@@ -22,11 +22,11 @@
 		'tail' => 'order by post_time desc',
 		'page_len' => 10
 	));
-	
+
 	$all_tags = DB::selectAll("select distinct tag from blogs_tags where blog_id in (select id from blogs where $blogs_cond)");
-	
+
 	requireLib('mathjax');
-	requireLib('hljs');
+	requireLib('prism');
 ?>
 <?php echoUOJPageHeader('日志') ?>
 
@@ -75,7 +75,7 @@
 			<?php endforeach ?>
 			<?php endif ?>
 		<?php endif ?>
-		
+
 		<?= $blogs_pag->pagination() ?>
 	</div>
 </div>

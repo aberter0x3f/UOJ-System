@@ -1,13 +1,13 @@
 <?php
 	requirePHPLib('form');
 	requirePHPLib('judger');
-	
+
 	if (!validateUInt($_GET['id']) || !($problem = queryProblemBrief($_GET['id']))) {
 		become404Page();
 	}
-	
+
 	$problem_content = queryProblemContent($problem['id']);
-	
+
 	$contest = validateUInt($_GET['contest_id']) ? queryContest($_GET['contest_id']) : null;
 	if ($contest != null) {
 		genMoreContestInfo($contest);
@@ -18,7 +18,7 @@
 			$problem_letter = chr(ord('A') + $problem_rank - 1);
 		}
 	}
-	
+
 	$is_in_contest = false;
 	$ban_in_contest = false;
 	if ($contest != null) {
@@ -75,17 +75,17 @@
 		}
 		die();
 	}
-	
+
 	$can_use_zip_upload = true;
 	foreach ($submission_requirement as $req) {
 		if ($req['type'] == 'source code') {
 			$can_use_zip_upload = false;
 		}
 	}
-	
+
 	function handleUpload($zip_file_name, $content, $tot_size) {
 		global $problem, $contest, $myUser, $is_in_contest;
-		
+
 		$content['config'][] = array('problem_id', $problem['id']);
 		if ($is_in_contest && $contest['extra_config']["contest_type"]!='IOI' && !isset($contest['extra_config']["problem_{$problem['id']}"])) {
 			$content['final_test_config'] = $content['config'];
@@ -104,11 +104,11 @@
 			Cookie::set('uoj_preferred_language', $language, time() + 60 * 60 * 24 * 365, '/');
 		}
 		$esc_language = DB::escape($language);
- 		
+
 		$result = array();
 		$result['status'] = "Waiting";
 		$result_json = json_encode($result);
-		
+
 		if ($is_in_contest) {
 			DB::query("insert into submissions (problem_id, contest_id, submit_time, submitter, content, language, tot_size, status, result, is_hidden) values (${problem['id']}, ${contest['id']}, now(), '${myUser['username']}', '$esc_content', '$esc_language', $tot_size, '${result['status']}', '$result_json', 0)");
 		} else {
@@ -117,7 +117,7 @@
 	}
 	function handleCustomTestUpload($zip_file_name, $content, $tot_size) {
 		global $problem, $contest, $myUser;
-		
+
 		$content['config'][] = array('problem_id', $problem['id']);
 		$content['config'][] = array('custom_test', 'on');
 		$esc_content = DB::escape(json_encode($content));
@@ -133,14 +133,14 @@
 			Cookie::set('uoj_preferred_language', $language, time() + 60 * 60 * 24 * 365, '/');
 		}
 		$esc_language = DB::escape($language);
- 		
+
 		$result = array();
 		$result['status'] = "Waiting";
 		$result_json = json_encode($result);
-		
+
 		DB::insert("insert into custom_test_submissions (problem_id, submit_time, submitter, content, status, result) values ({$problem['id']}, now(), '{$myUser['username']}', '$esc_content', '{$result['status']}', '$result_json')");
 	}
-	
+
 	if ($can_use_zip_upload) {
 		$zip_answer_form = newZipSubmissionForm('zip_answer',
 			$submission_requirement,
@@ -156,7 +156,7 @@
 		$zip_answer_form->succ_href = $is_in_contest ? "/contest/{$contest['id']}/submissions" : '/submissions';
 		$zip_answer_form->runAtServer();
 	}
-	
+
 	$answer_form = newSubmissionForm('answer',
 		$submission_requirement,
 		'uojRandAvailableSubmissionFileName',
@@ -204,7 +204,7 @@ EOD
 ?>
 <?php
 	$REQUIRE_LIB['mathjax'] = '';
-	$REQUIRE_LIB['hljs'] = '';
+	$REQUIRE_LIB['prism'] = '';
 ?>
 <?php echoUOJPageHeader(HTML::stripTags($problem['title']) . ' - ' . UOJLocale::get('problems::problem')) ?>
 <?php

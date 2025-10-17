@@ -192,11 +192,10 @@
 		<?= HTML::js_src('/js/raphael.min.js') ?>
 		<?php endif ?>
 
-		<?php if (isset($REQUIRE_LIB['hljs'])): ?>
-		<!-- hljs -->
-		<?= HTML::css_link('/css/highlight_github.css') ?>
-		<?= HTML::js_src('/js/highlight.min.js') ?>
-		<script type="text/javascript">$(document).ready(function(){hljs.highlightAll()})</script>
+		<?php if (isset($REQUIRE_LIB['prism'])): ?>
+		<!-- prism -->
+		<?= HTML::css_link('/css/prism.css') ?>
+		<?= HTML::js_src('/js/prism.js') ?>
 		<?php endif ?>
 
 		<?php if (isset($REQUIRE_LIB['ckeditor'])): ?>

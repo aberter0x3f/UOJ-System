@@ -6,7 +6,7 @@ $paste = DB::selectFirst("select * from pastes where `index` = '".DB::escape($pa
 if (!$paste) {
 	become404Page();
 }
-$REQUIRE_LIB['shjs'] = "";
+$REQUIRE_LIB['prism'] = "";
 echoUOJPageHeader("Paste!");
 echoPasteContent($paste);
 echoUOJPageFooter();

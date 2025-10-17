@@ -7,7 +7,7 @@ class UOJBlogEditor {
 	public $save;
 	public $cur_data = array();
 	public $post_data = array();
-	
+
 	public $label_text = array(
 		'title' => '标题',
 		'tags' => '标签（多个标签用逗号隔开）',
@@ -17,13 +17,13 @@ class UOJBlogEditor {
 		'private' => '未公开',
 		'public' => '公开'
 	);
-	
+
 	public $validator = array();
-	
+
 	function __construct() {
 		global $REQUIRE_LIB;
 		$REQUIRE_LIB['blog-editor'] = '';
-		
+
 		$this->validator = array(
 			'title' => function(&$title) {
 				if ($title == '') {
@@ -67,7 +67,7 @@ class UOJBlogEditor {
 			}
 		);
 	}
-	
+
 	public function validate($name) {
 		if (!isset($_POST["{$this->name}_{$name}"])) {
 			return '不能为空';
@@ -88,14 +88,13 @@ class UOJBlogEditor {
 			die(json_encode($errors));
 		}
 		crsf_defend();
-		
+
 		$this->post_data['is_hidden'] = isset($_POST["{$this->name}_is_hidden"]) ? 1 : 0;
-		
+
 		$purifier = HTML::pruifier();
 		$parsedown = HTML::parsedown();
-		
 		$this->post_data['title'] = HTML::escape($this->post_data['title']);
-		
+
 		if ($this->type == 'blog') {
 			$this->post_data['content'] = $parsedown->text($this->post_data['content_md']);
 
@@ -126,7 +125,7 @@ class UOJBlogEditor {
 
 				return $purifier->purify($dom->saveHTML());
 			};
-			
+
 			$config = array();
 			$this->post_data['content'] = '';
 			foreach ($content_array as $slide_name => $slide_content) {
@@ -138,9 +137,9 @@ class UOJBlogEditor {
 					}
 					continue;
 				}
-				
+
 				$this->post_data['content'] .= '<section>';
-				
+
 				if (is_string($slide_content)) {
 					$this->post_data['content'] .= $marked($slide_content);
 				} elseif (is_array($slide_content)) {
@@ -157,7 +156,7 @@ class UOJBlogEditor {
 			$this->post_data['content'] = json_encode($config) . "\n" . $this->post_data['content'];
 		}
 	}
-	
+
 	public function handleSave() {
 		$save = $this->save;
 		$this->receivePostData();
@@ -165,11 +164,11 @@ class UOJBlogEditor {
 		if (!$ret) {
 			$ret = array();
 		}
-		
+
 		if (isset($_POST['need_preview'])) {
 			ob_start();
 			if ($this->type == 'blog') {
-				echoUOJPageHeader('博客预览', array('ShowPageHeader' => false, 'REQUIRE_LIB' => array('mathjax' => '', 'hljs' => '')));
+				echoUOJPageHeader('博客预览', array('ShowPageHeader' => false, 'REQUIRE_LIB' => array('mathjax' => '', 'prism' => '')));
 				echo '<article>';
 				echo $this->post_data['content'];
 				echo '</article>';
@@ -186,10 +185,10 @@ class UOJBlogEditor {
 			$ret['html'] = ob_get_contents();
 			ob_end_clean();
 		}
-		
+
 		die(json_encode($ret));
 	}
-	
+
 	public function runAtServer() {
 		if (isset($_POST["save-{$this->name}"])) {
 			$this->handleSave();
