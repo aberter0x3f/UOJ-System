@@ -1,7 +1,7 @@
 <?php
-	requireLib('hljs');
+	requireLib('prism');
 	requireLib('mathjax');
-	echoUOJPageHeader(UOJLocale::get('help')) 
+	echoUOJPageHeader(UOJLocale::get('help'))
 ?>
 <article>
 	<header>
@@ -125,37 +125,35 @@
 					<hr /><p><code>数学公式萌萌哒 $(a + b)^2$ 萌萌哒</code> = 数学公式萌萌哒 $(a + b)^2$ 萌萌哒</p>
 					<hr /><p><code>&lt;!-- readmore --&gt;</code> = 在外面看这篇博客时会到此为止然后显示一个“阅读更多”字样</p>
 					<hr /><p>来个更大的例子：</p>
-					<pre>
-					```c++
-					#include &lt;iostream&gt;
-					```
+					<pre>```cpp
+#include &lt;iostream&gt;
+```
 
-					```c
-					#include &lt;stdio.h&gt;
-					```
+```c
+#include &lt;stdio.h&gt;
+```
 
-					```pascal
-					begin
-					```
+```pascal
+begin
+```
 
-					```python
-					print '<?= UOJConfig::$data['profile']['oj-name-short'] ?>'
-					```
+```python
+print('<?= UOJConfig::$data['profile']['oj-name-short'] ?>')
+```
 
-					\begin{equation}
-					\frac{-b + \sqrt{b^2 - 4ac}}{2a}
-					\end{equation}
+\begin{equation}
+\frac{-b + \sqrt{b^2 - 4ac}}{2a}
+\end{equation}
 
-					# 一级标题
-					## 二级标题
-					### 三级标题
-					#### 四级标题
-					</pre>
+# 一级标题
+## 二级标题
+### 三级标题
+#### 四级标题</pre>
 					<p>会转换为：</p>
-					<pre><code class="sh_cpp">#include &lt;iostream&gt;</code></pre>
-					<pre><code class="sh_c">#include &lt;stdio.h&gt;</code></pre>
-					<pre><code class="sh_pascal">begin</code></pre>
-					<pre><code class="sh_python">print '<?= UOJConfig::$data['profile']['oj-name-short'] ?>'</code></pre>
+					<pre><code class="language-cpp">#include &lt;iostream&gt;</code></pre>
+					<pre><code class="language-c">#include &lt;stdio.h&gt;</code></pre>
+					<pre><code class="language-pascal">begin</code></pre>
+					<pre><code class="language-python">print('<?= UOJConfig::$data['profile']['oj-name-short'] ?>')</code></pre>
 					<p>\begin{equation}
 					\frac{-b + \sqrt{b^2 - 4ac}}{2a}
 					\end{equation}</p>

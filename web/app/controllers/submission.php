@@ -1,15 +1,15 @@
 <?php
 	requirePHPLib('form');
 	requirePHPLib('judger');
-	
+
 	if (!validateUInt($_GET['id']) || !($submission = querySubmission($_GET['id']))) {
 		become404Page();
 	}
 	$submission_result = json_decode($submission['result'], true);
-	
+
 	$problem = queryProblemBrief($submission['problem_id']);
 	$problem_extra_config = getProblemExtraConfig($problem);
-	
+
 	if ($submission['contest_id']) {
 		$contest = queryContest($submission['contest_id']);
 		genMoreContestInfo($contest);
@@ -19,9 +19,9 @@
 	if (!isSubmissionVisibleToUser($submission, $problem, $myUser)) {
 		become403Page();
 	}
-	
+
 	$out_status = explode(', ', $submission['status'])[0];
-	
+
 	if ($_GET['get'] == 'status-details' && Auth::check() && $submission['submitter'] === Auth::id()) {
 		echo json_encode(array(
 			'judged' => $out_status == 'Judged',
@@ -29,11 +29,11 @@
 		));
 		die();
 	}
-	
+
 	$hackable = $submission['score'] == 100 && $problem['hackable'] == 1;
 	if ($hackable) {
-		$hack_form = new UOJForm('hack');	
-		
+		$hack_form = new UOJForm('hack');
+
 		$hack_form->addTextFileInput('input', '输入数据');
 		$hack_form->addCheckBox('use_formatter', '帮我整理文末回车、行末空格、换行符', true);
 		$hack_form->handle = function(&$vdata) {
@@ -41,14 +41,14 @@
 			if ($myUser == null) {
 				redirectToLogin();
 			}
-			
+
 			if ($_POST["input_upload_type"] == 'file') {
 				$tmp_name = UOJForm::uploadedFileTmpName("input_file");
 				if ($tmp_name == null) {
 					becomeMsgPage('你在干啥……怎么什么都没交过来……？');
 				}
 			}
-			
+
 			$fileName = uojRandAvailableTmpFileName();
 			$fileFullName = UOJContext::storagePath().$fileName;
 			if ($_POST["input_upload_type"] == 'editor') {
@@ -60,7 +60,7 @@
 			DB::insert("insert into hacks (problem_id, submission_id, hacker, owner, input, input_type, submit_time, details, is_hidden) values ({$problem['id']}, {$submission['id']}, '{$myUser['username']}', '{$submission['submitter']}', '$fileName', '$input_type', now(), '', {$problem['is_hidden']})");
 		};
 		$hack_form->succ_href = "/hacks";
-		
+
 		$hack_form->runAtServer();
 	}
 
@@ -75,7 +75,7 @@
 		$rejudge_form->submit_button_config['align'] = 'right';
 		$rejudge_form->runAtServer();
 	}
-	
+
 	if (isSuperUser($myUser)) {
 		$delete_form = new UOJForm('delete');
 		$delete_form->handle = function() {
@@ -92,7 +92,7 @@
 		$delete_form->succ_href = "/submissions";
 		$delete_form->runAtServer();
 	}
-	
+
 	$should_show_content = hasViewPermission($problem_extra_config['view_content_type'], $myUser, $problem, $submission);
 	$should_show_all_details = hasViewPermission($problem_extra_config['view_all_details_type'], $myUser, $problem, $submission);
 	$should_show_details = hasViewPermission($problem_extra_config['view_details_type'], $myUser, $problem, $submission);
@@ -113,7 +113,7 @@
 		$should_show_content = true;
 		$should_show_all_details = true;
 	}
-	
+
 	if ($should_show_all_details) {
 		$styler = new SubmissionDetailsStyler();
 		if ((!$should_show_details || ($contest['extra_config']['contest_type']=='IOI' && $contest['cur_progress'] == CONTEST_IN_PROGRESS)) && !hasContestPermission($myUser, $contest)) {
@@ -125,8 +125,8 @@
 		}
 	}
 ?>
-<?php 
-	$REQUIRE_LIB['hljs'] = "";
+<?php
+	$REQUIRE_LIB['prism'] = "";
 ?>
 <?php echoUOJPageHeader(UOJLocale::get('problems::submission').' #'.$submission['id']) ?>
 <?php echoSubmissionsListOnlyOne($submission, array(), $myUser) ?>

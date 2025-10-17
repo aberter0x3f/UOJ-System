@@ -28,7 +28,7 @@
 		<link rel="stylesheet" type="text/css" href="<?= HTML::url('/css/reveal/theme/'.HTML::escape($slide_config['theme']).'.css') ?>" id="theme">
 
 		<!-- Code syntax highlighting -->
-		<?= HTML::css_link('/css/zenburn.css') ?>
+		<?= HTML::css_link('/css/prism-dark.css') ?>
 
 		<!-- Printing and PDF exports -->
 		<script>
@@ -50,6 +50,7 @@
 
 		<script src="<?= HTML::url('/js/head.min.js') ?>"></script>
 		<script src="<?= HTML::url('/js/reveal.js') ?>"></script>
+		<script src="<?= HTML::url('/js/prism.js') ?>" data-manual></script>
 
 		<script type="text/javascript">
 			Reveal.initialize({
@@ -68,7 +69,7 @@
 
 				dependencies: [
 					{ src: '<?= HTML::url('/js/classList.js') ?>', condition: function() { return !document.body.classList; } },
-					{ src: '<?= HTML::url('/js/reveal/plugin/highlight/highlight.js') ?>', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: '<?= HTML::url('/js/reveal/plugin/prism/prism.js') ?>', async: true, condition: function() { return !!document.querySelector( 'pre code' ); } },
 					{ src: '<?= HTML::url('/js/reveal/plugin/zoom-js/zoom.js') ?>', async: true },
 					{ src: '<?= HTML::url('/js/reveal/plugin/notes/notes.js') ?>', async: true },
 					{ src: '<?= HTML::url('/js/reveal/plugin/math/math.js') ?>', async: true }

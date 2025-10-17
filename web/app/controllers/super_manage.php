@@ -1,11 +1,11 @@
 <?php
 	requirePHPLib('form');
 	requirePHPLib('judger');
-	
+
 	if ($myUser == null || !isSuperUser($myUser)) {
 		become403Page();
 	}
-	
+
 	$user_form = new UOJForm('user');
 	$user_form->addInput('username', 'text', '用户名', '',
 		function ($username) {
@@ -27,7 +27,7 @@
 	$user_form->addSelect('op-type', $options, '操作类型', '');
 	$user_form->handle = function() {
 		global $user_form;
-		
+
 		$username = $_POST['username'];
 		switch ($_POST['op-type']) {
 			case 'banneduser':
@@ -42,7 +42,7 @@
 		}
 	};
 	$user_form->runAtServer();
-	
+
 	$blog_link_contests = new UOJForm('blog_link_contests');
 	$blog_link_contests->addInput('blog_id', 'text', '博客ID', '',
 		function ($x) {
@@ -87,7 +87,7 @@
 		$config = $all_config['links'];
 
 		$n = count($config);
-		
+
 		if ($_POST['op-type'] == 'add') {
 			$row = array();
 			$row[0] = $_POST['title'];
@@ -110,7 +110,7 @@
 		DB::query("update contests set extra_config='${str}' where id='${contest_id}'");
 	};
 	$blog_link_contests->runAtServer();
-	
+
 	$blog_link_index = new UOJForm('blog_link_index');
 	$blog_link_index->addInput('blog_id2', 'text', '博客ID', '',
 		function ($x) {
@@ -156,7 +156,7 @@
 		}
 	};
 	$blog_link_index->runAtServer();
-	
+
 	$blog_deleter = new UOJForm('blog_deleter');
 	$blog_deleter->addInput('blog_del_id', 'text', '博客ID', '',
 		function ($x) {
@@ -191,7 +191,7 @@
 	$contest_submissions_deleter->handle = function() {
 		$contest = queryContest($_POST['contest_id']);
 		genMoreContestInfo($contest);
-		
+
 		$contest_problems = DB::selectAll("select problem_id from contests_problems where contest_id = {$contest['id']}");
 		foreach ($contest_problems as $problem) {
 			$submissions = DB::selectAll("select * from submissions where problem_id = {$problem['problem_id']} and submit_time < '{$contest['start_time_str']}'");
@@ -245,7 +245,7 @@
 		DB::insert("insert into judger_info (judger_name,password) values('{$vdata['name']}','{$password}')");
 	};
 	$judger_adder->runAtServer();
-	
+
 	$judger_deleter = new UOJForm('judger_deleter');
 	$judger_deleter->addInput('judger_deleter_name', 'text', '评测机名称', '',
 		function ($x, &$vdata) {
@@ -280,7 +280,7 @@
 		DB::delete("delete from pastes where `index` = '${vdata['name']}'");
 	};
 	$paste_deleter->runAtServer();
-	
+
 	$judgerlist_cols = array('judger_name', 'password');
 	$judgerlist_config = array();
 	$judgerlist_header_row = <<<EOD
@@ -297,7 +297,7 @@ EOD;
 			</tr>
 EOD;
 	};
-	
+
 	$banlist_cols = array('username', 'usergroup');
 	$banlist_config = array();
 	$banlist_header_row = <<<EOD
@@ -313,9 +313,9 @@ EOD;
 			</tr>
 EOD;
 	};
-	
+
 	$cur_tab = isset($_GET['tab']) ? $_GET['tab'] : 'users';
-	
+
 	$tabs_info = array(
 		'users' => array(
 			'name' => '用户操作',
@@ -350,13 +350,13 @@ EOD;
 			'url' => '/super-manage/paste'
 		)
 	);
-	
+
 	if (!isset($tabs_info[$cur_tab])) {
 		become404Page();
 	}
 ?>
 <?php
-	requireLib('hljs');
+	requireLib('prism');
 	requireLib('morris');
 ?>
 <?php echoUOJPageHeader('系统管理') ?>
@@ -364,7 +364,7 @@ EOD;
 	<div class="col-sm-3">
 		<?= HTML::tablist($tabs_info, $cur_tab, 'nav-pills flex-column') ?>
 	</div>
-	
+
 	<div class="col-sm-9">
 		<?php if ($cur_tab === 'users'): ?>
 			<?php $user_form->printHTML(); ?>
@@ -380,7 +380,7 @@ EOD;
 				<h4>添加到公告</h4>
 				<?php $blog_link_index->printHTML(); ?>
 			</div>
-		
+
 			<div>
 				<h4>删除博客</h4>
 				<?php $blog_deleter->printHTML(); ?>
@@ -439,7 +439,7 @@ EOD;
 				resize: true
 			});
 		</script>
-		
+
 		<h2 class="text-center">一月搜索情况</h2>
 		<div id="search-distribution-chart-month" style="height: 250px;"></div>
 		<script type="text/javascript">
@@ -452,7 +452,7 @@ EOD;
 				resize: true
 			});
 		</script>
-		
+
 		<?php echoLongTable(array('*'), 'search_requests', "1", 'order by id desc',
 			'<tr><th>id</th><th>created_at</th><th>remote_addr</th><th>type</th><th>q</th><tr>',
 			function($row) {

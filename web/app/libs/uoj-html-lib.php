@@ -15,12 +15,12 @@ function uojHandleAtSign($str, $uri) {
 			}
 		}
 	}, $str);
-	
+
 	$referrers_list = array();
 	foreach ($referrers as $referrer => $val) {
 		$referrers_list[] = $referrer;
 	}
-	
+
 	return array($res, $referrers_list);
 }
 
@@ -43,7 +43,7 @@ function redirectTo($url) {
 	die();
 }
 function permanentlyRedirectTo($url) {
-	header("HTTP/1.1 301 Moved Permanently"); 
+	header("HTTP/1.1 301 Moved Permanently");
 	header('Location: '.$url);
 	die();
 }
@@ -70,7 +70,7 @@ function become404Page() {
 	becomeMsgPage('<div class="text-center"><div style="font-size:233px">404</div><p>唔……未找到该页面……你是从哪里点进来的……&gt;_&lt;……</p></div>', '404');
 }
 function become403Page() {
-	header($_SERVER['SERVER_PROTOCOL'] . " 403 Forbidden", true, 403); 
+	header($_SERVER['SERVER_PROTOCOL'] . " 403 Forbidden", true, 403);
 	becomeMsgPage('<div class="text-center"><div style="font-size:233px">403</div><p>禁止入内！ T_T</p></div>', '403');
 }
 
@@ -119,12 +119,12 @@ function getLongTablePageRawUri($page) {
 	$path = strtok(UOJContext::requestURI(), '?');
 	$query_string = strtok('?');
 	parse_str($query_string, $param);
-			
+
 	$param['page'] = $page;
 	if ($page == 1) {
 		unset($param['page']);
 	}
-			
+
 	if ($param) {
 		return $path . '?' . http_build_query($param);
 	} else {
@@ -145,7 +145,7 @@ function echoLongTable($col_names, $table_name, $cond, $tail, $header_row, $prin
 
 	$div_classes = isset($config['div_classes']) ? $config['div_classes'] : array('table-responsive');
 	$table_classes = isset($config['table_classes']) ? $config['table_classes'] : array('table', 'table-bordered', 'table-hover', 'table-striped', 'table-text-center');
-		
+
 	echo '<div class="', join($div_classes, ' '), '">';
 	echo '<table class="', join($table_classes, ' '), '">';
 	echo '<thead>';
@@ -167,23 +167,23 @@ function echoLongTable($col_names, $table_name, $cond, $tail, $header_row, $prin
 	echo '</tbody>';
 	echo '</table>';
 	echo '</div>';
-	
+
 	if (isset($config['print_after_table'])) {
 		$fun = $config['print_after_table'];
 		$fun();
 	}
-		
+
 	echo $pag->pagination();
 }
 
 function getSubmissionStatusDetails($submission) {
 	$html = '<td colspan="233" style="vertical-align: middle">';
-	
+
 	$out_status = explode(', ', $submission['status'])[0];
-	
+
 	$fly = '<img src="/images/utility/qpx_n/b37.gif" alt="小熊像超人一样飞" class="img-rounded" />';
 	$think = '<img src="/images/utility/qpx_n/b29.gif" alt="小熊像在思考" class="img-rounded" />';
-	
+
 	if ($out_status == 'Judged') {
 		$status_text = '<strong>Judged!</strong>';
 		$status_img = $fly;
@@ -206,7 +206,7 @@ function getSubmissionStatusDetails($submission) {
 function echoSubmission($submission, $config, $user) {
 	$problem = queryProblemBrief($submission['problem_id']);
 	$submitterLink = getUserLink($submission['submitter']);
-	
+
 	if ($submission['score'] == null) {
 		$used_time_str = "/";
 		$used_memory_str = "/";
@@ -214,11 +214,11 @@ function echoSubmission($submission, $config, $user) {
 		$used_time_str = $submission['used_time'] . 'ms';
 		$used_memory_str = $submission['used_memory'] . 'kb';
 	}
-	
+
 	$status = explode(', ', $submission['status'])[0];
-	
+
 	$show_status_details = Auth::check() && $submission['submitter'] === Auth::id() && $status !== 'Judged';
-	
+
 	if (!$show_status_details) {
 		echo '<tr>';
 	} else {
@@ -330,7 +330,7 @@ function echoSubmissionsList($cond, $tail, $config, $user) {
 	$col_names[] = 'submissions.status';
 	$col_names[] = 'submissions.result_error';
 	$col_names[] = 'submissions.score';
-	
+
 	if (!isset($config['id_hidden'])) {
 		$header_row .= '<th>ID</th>';
 		$col_names[] = 'submissions.id';
@@ -369,9 +369,9 @@ function echoSubmissionsList($cond, $tail, $config, $user) {
 		$col_names[] = 'submissions.judge_time';
 	}
 	$header_row .= '</tr>';
-	
+
 	$table_name = isset($config['table_name']) ? $config['table_name'] : 'submissions';
-	
+
 	if (!isSuperUser($user)) {
 		if ($user != null) {
 			$permission_cond = "submissions.is_hidden = false or (submissions.is_hidden = true and submissions.problem_id in (select problem_id from problems_permissions where username = '{$user['username']}'))";
@@ -384,9 +384,9 @@ function echoSubmissionsList($cond, $tail, $config, $user) {
 			$cond = $permission_cond;
 		}
 	}
-	
+
 	$table_config = isset($config['table_config']) ? $config['table_config'] : null;
-	
+
 	echoLongTable($col_names, $table_name, $cond, $tail, $header_row,
 		function($submission) use ($config, $user) {
 			echoSubmission($submission, $config, $user);
@@ -458,17 +458,17 @@ HTML;
 		case 'C++20':
 		case 'C++23':
 		case 'C++26':
-			$sh_class = 'sh_cpp';
+			$lang_class = 'language-cpp';
 			break;
 		case 'Python2':
 		case 'Python3':
-			$sh_class = 'sh_python';
+			$lang_class = 'language-python';
 			break;
 		case 'Java8':
 		case 'Java11':
 		case 'Java17':
 		case 'Java21':
-			$sh_class = 'sh_java';
+			$lang_class = 'language-java';
 			break;
 		case 'C':
 		case 'C89':
@@ -476,13 +476,13 @@ HTML;
 		case 'C11':
 		case 'C17':
 		case 'C23':
-			$sh_class = 'sh_c';
+			$lang_class = 'language-c';
 			break;
 		case 'Pascal':
-			$sh_class = 'sh_pascal';
+			$lang_class = 'language-pascal';
 			break;
 		default:
-			$sh_class = '';
+			$lang_class = '';
 			break;
 	}
 	echo '<div class="card border-info mb-3">';
@@ -490,7 +490,7 @@ HTML;
 	echo '<h4 class="card-title">Paste!</h4>';
 	echo '</div>';
 	echo '<div class="card-body">';
-	echo '<pre><code class="'.$sh_class.'">'.$file_content."\n".'</code></pre>';
+	echo '<pre><code class="'.$lang_class.'">'.$file_content."\n".'</code></pre>';
 	echo '</div>';
 	echo '<div class="card-footer">'.$footer_text.'</div>';
 	echo '</div>';
@@ -515,12 +515,12 @@ function echoSubmissionContent($submission, $requirement) {
 		echo '</div>';
 		return;
 	}
-	
+
 	$config = array();
 	foreach ($submission_content['config'] as $config_key => $config_val) {
 		$config[$config_val[0]] = $config_val[1];
 	}
-	
+
 	foreach ($requirement as $req) {
 		if ($req['type'] == "source code") {
 			$file_content = $zip_file->getFromName("{$req['name']}.code");
@@ -537,17 +537,17 @@ function echoSubmissionContent($submission, $requirement) {
 				case 'C++20':
 				case 'C++23':
 				case 'C++26':
-					$sh_class = 'sh_cpp';
+					$lang_class = 'language-cpp';
 					break;
 				case 'Python2':
 				case 'Python3':
-					$sh_class = 'sh_python';
+					$lang_class = 'language-python';
 					break;
 				case 'Java8':
 				case 'Java11':
 				case 'Java17':
 				case 'Java21':
-					$sh_class = 'sh_java';
+					$lang_class = 'language-java';
 					break;
 				case 'C':
 				case 'C89':
@@ -555,13 +555,13 @@ function echoSubmissionContent($submission, $requirement) {
 				case 'C11':
 				case 'C17':
 				case 'C23':
-					$sh_class = 'sh_c';
+					$lang_class = 'language-c';
 					break;
 				case 'Pascal':
-					$sh_class = 'sh_pascal';
+					$lang_class = 'language-pascal';
 					break;
 				default:
-					$sh_class = '';
+					$lang_class = '';
 					break;
 			}
 			echo '<div class="card border-info mb-3">';
@@ -569,7 +569,7 @@ function echoSubmissionContent($submission, $requirement) {
 			echo '<h4 class="card-title">'.$req['name'].'</h4>';
 			echo '</div>';
 			echo '<div class="card-body">';
-			echo '<pre><code class="'.$sh_class.'">'.$file_content."\n".'</code></pre>';
+			echo '<pre><code class="'.$lang_class.'">'.$file_content."\n".'</code></pre>';
 			echo '</div>';
 			echo '<div class="card-footer">'.$footer_text.'</div>';
 			echo '</div>';
@@ -598,7 +598,7 @@ class JudgementDetailsPrinter {
 	private $name;
 	private $styler;
 	private $dom;
-	
+
 	private $subtask_num;
 
 	private function _print_c($node) {
@@ -628,19 +628,19 @@ class JudgementDetailsPrinter {
 			$subtask_num = $node->getAttribute('num');
 			$subtask_score = $node->getAttribute('score');
 			$subtask_info = $node->getAttribute('info');
-			
+
 			echo '<div class="card ', $this->styler->getTestInfoClass($subtask_info), ' mb-3">';
-			
+
 			$accordion_parent = "{$this->name}_details_accordion";
 			$accordion_collapse =  "{$accordion_parent}_collapse_subtask_{$subtask_num}";
 			$accordion_collapse_accordion =  "{$accordion_collapse}_accordion";
 			echo 	'<div class="card-header" data-toggle="collapse" data-parent="#', $accordion_parent, '" data-target="#', $accordion_collapse, '">';
-			
+
 			echo 		'<div class="row">';
 			echo 			'<div class="col-sm-2">';
 			echo 				'<h3 class="card-title">', 'Subtask #', $subtask_num, ': ', '</h3>';
 			echo 			'</div>';
-			
+
 			if ($this->styler->show_score) {
 				echo 		'<div class="col-sm-2">';
 				echo 			'score: ', $subtask_score;
@@ -656,7 +656,7 @@ class JudgementDetailsPrinter {
 
 			echo 		'</div>';
 			echo 	'</div>';
-			
+
 			echo 	'<div id="', $accordion_collapse, '" class="card-collapse collapse">';
 			echo 		'<div class="card-body">';
 
@@ -677,7 +677,7 @@ class JudgementDetailsPrinter {
 			$test_memory = $node->getAttribute('memory');
 
 			echo '<div class="card ', $this->styler->getTestInfoClass($test_info), ' mb-3">';
-			
+
 			$accordion_parent = "{$this->name}_details_accordion";
 			if ($this->subtask_num != null) {
 				$accordion_parent .= "_collapse_subtask_{$this->subtask_num}_accordion";
@@ -696,7 +696,7 @@ class JudgementDetailsPrinter {
 				echo '<h4 class="card-title">', 'Extra Test:', '</h4>';
 			}
 			echo '</div>';
-				
+
 			if ($this->styler->show_score) {
 				echo '<div class="col-sm-2">';
 				echo 'score: ', $test_score;
@@ -709,7 +709,7 @@ class JudgementDetailsPrinter {
 				echo htmlspecialchars($test_info);
 				echo '</div>';
 			}
-				
+
 			echo '<div class="col-sm-3">';
 			if ($test_time >= 0) {
 				echo 'time: ', $test_time, 'ms';
@@ -746,7 +746,7 @@ class JudgementDetailsPrinter {
 			$test_memory = $node->getAttribute('memory');
 
 			echo '<div class="card ', $this->styler->getTestInfoClass($test_info), ' mb-3">';
-			
+
 			$accordion_parent = "{$this->name}_details_accordion";
 			$accordion_collapse = "{$accordion_parent}_collapse_custom_test";
 			if (!$this->styler->shouldFadeDetails($test_info)) {
@@ -758,11 +758,11 @@ class JudgementDetailsPrinter {
 			echo '<div class="col-sm-2">';
 			echo '<h4 class="card-title">', 'Custom Test: ', '</h4>';
 			echo '</div>';
-				
+
 			echo '<div class="col-sm-4">';
 			echo htmlspecialchars($test_info);
 			echo '</div>';
-				
+
 			echo '<div class="col-sm-3">';
 			if ($test_time >= 0) {
 				echo 'time: ', $test_time, 'ms';
@@ -996,11 +996,11 @@ function echoHackListOnlyOne($hack, $config, $user) {
 function echoHacksList($cond, $tail, $config, $user) {
 	$header_row = '<tr>';
 	$col_names = array();
-	
+
 	$col_names[] = 'id';
 	$col_names[] = 'success';
 	$col_names[] = 'judge_time';
-	
+
 	if (!isset($config['id_hidden'])) {
 		$header_row .= '<th>ID</th>';
 	}
@@ -1088,7 +1088,7 @@ function echoRanklist($config = array()) {
 	$header_row .= '<th style="width: 50em;">'.UOJLocale::get('motto').'</th>';
 	$header_row .= '<th style="width: 5em;">'.UOJLocale::get('rating').'</th>';
 	$header_row .= '</tr>';
-	
+
 	$users = array();
 	$print_row = function($user, $now_cnt) use (&$users) {
 		if (!$users) {
@@ -1098,25 +1098,25 @@ function echoRanklist($config = array()) {
 		} else {
 			$rank = $now_cnt;
 		}
-		
+
 		$user['rank'] = $rank;
-		
+
 		echo '<tr>';
 		echo '<td>' . $user['rank'] . '</td>';
 		echo '<td>' . getUserLink($user['username']) . '</td>';
 		echo '<td>' . HTML::escape($user['motto']) . '</td>';
 		echo '<td>' . $user['rating'] . '</td>';
 		echo '</tr>';
-		
+
 		$users[] = $user;
 	};
 	$col_names = array('username', 'rating', 'motto');
 	$tail = 'order by rating desc, username asc';
-	
+
 	if (isset($config['top10'])) {
 		$tail .= ' limit 10';
 	}
-	
+
 	$config['get_row_index'] = '';
 	echoLongTable($col_names, 'user_info', '1', $tail, $header_row, $print_row, $config);
 }

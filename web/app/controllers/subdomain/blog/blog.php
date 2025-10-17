@@ -1,13 +1,13 @@
 <?php
 	requirePHPLib('form');
-	
+
 	if (!isset($_GET['id']) || !validateUInt($_GET['id']) || !($blog = queryBlog($_GET['id'])) || !UOJContext::isHis($blog)) {
 		become404Page();
 	}
 	if ($blog['is_hidden'] && !UOJContext::hasBlogPermission()) {
 		become403Page();
 	}
-	
+
 	$comment_form = new UOJForm('comment');
 	$comment_form->addVTextArea('comment', '内容', '',
 		function($comment) {
@@ -28,34 +28,34 @@
 	$comment_form->handle = function() {
 		global $myUser, $blog, $comment_form;
 		$comment = HTML::escape($_POST['comment']);
-		
+
 		list($comment, $referrers) = uojHandleAtSign($comment, "/post/{$blog['id']}");
-		
+
 		$esc_comment = DB::escape($comment);
 		DB::insert("insert into blogs_comments (poster, blog_id, content, reply_id, post_time, zan) values ('{$myUser['username']}', '{$blog['id']}', '$esc_comment', 0, now(), 0)");
 		$comment_id = DB::insert_id();
-		
+
 		$rank = DB::selectCount("select count(*) from blogs_comments where blog_id = {$blog['id']} and reply_id = 0 and id < {$comment_id}");
 		$page = floor($rank / 20) + 1;
-		
+
 		$uri = getLongTablePageUri($page) . '#' . "comment-{$comment_id}";
-		
+
 		foreach ($referrers as $referrer) {
 			$content = '有人在博客 ' . $blog['title'] . ' 的评论里提到你：<a href="' . $uri . '">点击此处查看</a>';
 			sendSystemMsg($referrer, '有人提到你', $content);
 		}
-		
+
 		if ($blog['poster'] !== $myUser['username']) {
 			$content = '有人回复了您的博客 ' . $blog['title'] . ' ：<a href="' . $uri . '">点击此处查看</a>';
 			sendSystemMsg($blog['poster'], '博客新回复通知', $content);
 		}
-		
+
 		$comment_form->succ_href = getLongTablePageRawUri($page);
 	};
 	$comment_form->ctrl_enter_submit = true;
-	
+
 	$comment_form->runAtServer();
-	
+
 	$reply_form = new UOJForm('reply');
 	$reply_form->addHidden('reply_id', '0',
 		function($reply_id, &$vdata) {
@@ -91,25 +91,25 @@
 	$reply_form->handle = function(&$vdata) {
 		global $myUser, $blog, $reply_form;
 		$comment = HTML::escape($_POST['reply_comment']);
-		
+
 		list($comment, $referrers) = uojHandleAtSign($comment, "/post/{$blog['id']}");
-		
+
 		$reply_id = $_POST['reply_id'];
-		
+
 		$esc_comment = DB::escape($comment);
 		DB::insert("insert into blogs_comments (poster, blog_id, content, reply_id, post_time, zan) values ('{$myUser['username']}', '{$blog['id']}', '$esc_comment', $reply_id, now(), 0)");
 		$comment_id = DB::insert_id();
-		
+
 		$rank = DB::selectCount("select count(*) from blogs_comments where blog_id = {$blog['id']} and reply_id = 0 and id < {$reply_id}");
 		$page = floor($rank / 20) + 1;
-		
+
 		$uri = getLongTablePageUri($page) . '#' . "comment-{$reply_id}";
-		
+
 		foreach ($referrers as $referrer) {
 			$content = '有人在博客 ' . $blog['title'] . ' 的评论里提到你：<a href="' . $uri . '">点击此处查看</a>';
 			sendSystemMsg($referrer, '有人提到你', $content);
 		}
-		
+
 		$parent = $vdata['parent'];
 		$notified = array();
 		if ($parent['poster'] !== $myUser['username']) {
@@ -122,13 +122,13 @@
 			$content = '有人回复了您的博客 ' . $blog['title'] . ' ：<a href="' . $uri . '">点击此处查看</a>';
 			sendSystemMsg($blog['poster'], '博客新回复通知', $content);
 		}
-		
+
 		$reply_form->succ_href = getLongTablePageRawUri($page);
 	};
 	$reply_form->ctrl_enter_submit = true;
-	
+
 	$reply_form->runAtServer();
-	
+
 	$comments_pag = new Paginator(array(
 		'col_names' => array('*'),
 		'table_name' => 'blogs_comments',
@@ -139,7 +139,7 @@
 ?>
 <?php
 	$REQUIRE_LIB['mathjax'] = '';
-	$REQUIRE_LIB['hljs'] = '';
+	$REQUIRE_LIB['prism'] = '';
 ?>
 <?php echoUOJPageHeader(HTML::stripTags($blog['title']) . ' - 博客') ?>
 <?php echoBlog($blog, array('show_title_only' => isset($_GET['page']) && $_GET['page'] != 1)) ?>
@@ -152,7 +152,7 @@
 		$poster = queryUser($comment['poster']);
 		$esc_email = HTML::escape($poster['email']);
 		$asrc = HTML::avatar_addr($poster, 80);
-		
+
 		$replies = DB::selectAll("select id, poster, content, post_time from blogs_comments where reply_id = {$comment['id']} order by id");
 		foreach ($replies as $idx => $reply) {
 			$replies[$idx]['poster_rating'] = queryUser($reply['poster'])['rating'];
