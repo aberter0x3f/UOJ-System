@@ -52,6 +52,32 @@
 		<script src="<?= HTML::url('/js/reveal.js') ?>"></script>
 		<script src="<?= HTML::url('/js/prism.js') ?>" data-manual></script>
 
+		<script>
+		window.MathJax = {
+			output: {
+				font: 'mathjax-tex',
+				fontPath: '<?= HTML::url('/js/mathjax/tex-font') ?>'
+			},
+			tex: {
+				inlineMath: [['$', '$']],
+				displayMath: [['$$', '$$']],
+				processEscapes: true
+			},
+			// 针对 reveal.js 的特殊处理，确保在幻灯片切换后能重新渲染数学公式
+			startup: {
+				ready: function () {
+					MathJax.startup.defaultReady();
+					// reveal.js 会在 'slidechanged' 事件时触发
+					Reveal.addEventListener('slidechanged', function(event) {
+						MathJax.typesetPromise();
+					});
+				}
+			}
+		};
+		</script>
+
+		<script src="<?= HTML::url('/js/mathjax/dist/tex-chtml-nofont.js') ?>"></script>
+
 		<script type="text/javascript">
 			Reveal.initialize({
 				controls: true,
@@ -62,17 +88,11 @@
 
 				transition: 'slide',
 
-				math: {
-					mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@2.7.7/MathJax.js',
-					config: 'TeX-AMS_HTML-full'
-				},
-
 				dependencies: [
 					{ src: '<?= HTML::url('/js/classList.js') ?>', condition: function() { return !document.body.classList; } },
 					{ src: '<?= HTML::url('/js/reveal/plugin/prism/prism.js') ?>', async: true, condition: function() { return !!document.querySelector( 'pre code' ); } },
 					{ src: '<?= HTML::url('/js/reveal/plugin/zoom-js/zoom.js') ?>', async: true },
 					{ src: '<?= HTML::url('/js/reveal/plugin/notes/notes.js') ?>', async: true },
-					{ src: '<?= HTML::url('/js/reveal/plugin/math/math.js') ?>', async: true }
 				]
 			});
 		</script>
