@@ -139,20 +139,21 @@
 		<?php endif ?>
 
 		<?php if (isset($REQUIRE_LIB['mathjax'])): ?>
-		<!-- MathJax -->
-		<script type="text/x-mathjax-config">
-			MathJax.Hub.Config({
-				showProcessingMessages: false,
-				tex2jax: {
-					inlineMath: [["$", "$"], ["\\\\(", "\\\\)"]],
-					processEscapes:true
-				},
-				menuSettings: {
-					zoom: "Hover"
-    			}
-			});
+		<!-- MathJax 4 Local Configuration -->
+		<script>
+		window.MathJax = {
+			output: {
+				font: 'mathjax-tex',
+				fontPath: '<?= HTML::url('/js/mathjax/tex-font') ?>'
+			},
+			tex: {
+				inlineMath: [['$', '$']],
+				displayMath: [['$$', '$$']],
+				processEscapes: true
+			}
+		};
 		</script>
-		<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.7/MathJax.js?config=TeX-AMS_HTML"></script>
+		<script src="<?= HTML::url('/js/mathjax/dist/tex-chtml-nofont.js') ?>"></script>
 		<?php endif ?>
 
 		<?php if (isset($REQUIRE_LIB['jquery.form'])): ?>
