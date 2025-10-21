@@ -202,18 +202,12 @@ void set_limit(int r, ssize_t rcur, ssize_t rmax = -1) {
     }
 }
 
-void set_user_cpu_time_limit(double tl) {
+void setup_watching_timer() {
     itimerval val;
-    val.it_value = runp::double_to_timeval(tl);
-    val.it_interval = {0, 100'000};
-
-    val.it_value.tv_usec += 100'000;
-    if (val.it_value.tv_usec >= 1'000'000) {
-        val.it_value.tv_sec++;
-        val.it_value.tv_usec -= 1'000'000;
-    }
-
-    setitimer(ITIMER_VIRTUAL, &val, NULL);
+    val.it_value = {0, 100'000};     // First tick after 100 ms
+    val.it_interval = {0, 100'000};  // Then every 100 ms
+    // Use ITIMER_PROF to count both user and kernel time.
+    setitimer(ITIMER_PROF, &val, NULL);
 }
 
 [[noreturn]] void run_child() {
@@ -221,7 +215,7 @@ void set_user_cpu_time_limit(double tl) {
 
     set_limit(RLIMIT_FSIZE, run_program_config.limits.output << 20ll);
     set_limit(RLIMIT_STACK, run_program_config.limits.stack << 20ll);
-    set_limit(RLIMIT_AS, (run_program_config.limits.memory + 64ll) << 20ll);
+    set_limit(RLIMIT_AS, (run_program_config.limits.memory * 2ll + 64ll) << 20ll);
 
     if (run_program_config.input_file_name != "stdin") {
         if (freopen(run_program_config.input_file_name.c_str(), "r", stdin) == NULL) {
@@ -290,7 +284,7 @@ void set_user_cpu_time_limit(double tl) {
 
     pid_t pid = fork();
     if (pid == 0) {
-        set_user_cpu_time_limit(run_program_config.limits.time);
+        setup_watching_timer();
         execv(program_c_argv[0], program_c_argv);
         _exit(17);
     } else if (pid != -1) {
@@ -550,10 +544,9 @@ run_event next_event() {
                 e.type = ET_SIGNAL_DELIVERY_STOP;
             }
             return e;
-        case SIGVTALRM:
-            // use rusage as the only standard for user CPU time TLE
-            // if the program reaches this line... then something goes wrong (rusage says no TLE,
-            // but timer says TLE) just ignore it and wait for another period
+        case SIGPROF:
+            // This signal is sent by ITIMER_PROF periodically to wake up the tracer
+            // for resource usage checks. The signal is not delivered to the child.
             e.sig = 0;
             e.type = ET_RESTART;
             return e;
