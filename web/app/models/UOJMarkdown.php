@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '../vendor/parsedown/ParsedownMath.php';
+require_once __DIR__ . '/../vendor/parsedown/ParsedownMath.php';
 
 class UOJMarkdown extends ParsedownMath {
 	public function __construct($options = '') {
