@@ -2,12 +2,12 @@
 	$content_p = strpos($content, "\n");
 	$slide_config = substr($content, 0, $content_p);
 	$slide_content = substr($content, $content_p + 1);
-	
+
 	$slide_config = json_decode($slide_config, true);
 	if ($slide_config === null) {
 		die('error');
 	}
-	
+
 	if (!isset($slide_config['theme'])) {
 		$slide_config['theme'] = 'moon';
 	}
@@ -60,9 +60,9 @@
 				help: true,
 
 				transition: 'slide',
-				
+
 				math: {
-					mathjax: '//cdn.bootcss.com/mathjax/2.6.0/MathJax.js',
+					mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@2.7.7/MathJax.js',
 					config: 'TeX-AMS_HTML-full'
 				},
 

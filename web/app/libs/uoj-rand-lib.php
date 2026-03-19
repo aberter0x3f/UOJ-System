@@ -13,25 +13,25 @@ function uojRandString($len, $charset = '0123456789abcdefghijklmnopqrstuvwxyzABC
 	return $str;
 }
 
-function uojRandAvaiableFileName($dir) {
+function uojRandAvailableFileName($dir) {
 	do {
 		$fileName = $dir . uojRandString(20);
 	} while (file_exists(UOJContext::storagePath().$fileName));
 	return $fileName;
 }
 
-function uojRandAvaiableTmpFileName() {
-	return uojRandAvaiableFileName('/tmp/');
+function uojRandAvailableTmpFileName() {
+	return uojRandAvailableFileName('/tmp/');
 }
 
-function uojRandAvaiableSubmissionFileName() {
+function uojRandAvailableSubmissionFileName() {
 	$num = uojRand(1, 10000);
 	if (!file_exists(UOJContext::storagePath()."/submission/$num")) {
 		system("mkdir ".UOJContext::storagePath()."/submission/$num");
 	}
-	return uojRandAvaiableFileName("/submission/$num/");
+	return uojRandAvailableFileName("/submission/$num/");
 }
 
-function uojRandAvaiablePasteFileName() {
-	return uojRandAvaiableFileName('/paste/');
+function uojRandAvailablePasteFileName() {
+	return uojRandAvailableFileName('/paste/');
 }

@@ -60,13 +60,7 @@ file_put_contents('/var/www/uoj/app/.config.php', "<?php\nreturn ".str_replace('
 UOJEOF
     # Prepare local sandbox
     cd /opt/uoj/judger/uoj_judger
-    cat >include/uoj_work_path.h <<UOJEOF
-#define UOJ_WORK_PATH "/opt/uoj/judger/uoj_judger"
-#define UOJ_JUDGER_BASESYSTEM_UBUNTU1804
-#define UOJ_JUDGER_PYTHON3_VERSION "3.6"
-#define UOJ_JUDGER_FPC_VERSION "3.0.4"
-UOJEOF
-    make runner -j$(($(nproc) + 1)) && cd /opt/uoj/web
+    make -j$(($(nproc) + 1)) && cd /opt/uoj/web
 }
 
 initProgress(){
@@ -77,7 +71,7 @@ initProgress(){
     #Using cli upgrade to latest
     php /var/www/uoj/app/cli.php upgrade:latest
     #Start services
-    service ntp restart
+    service ntpd restart
     service apache2 restart
     #Touch SetupDone flag file
     touch /var/uoj_data/.UOJSetupDone

@@ -316,8 +316,21 @@ EOD
 
 		$getDisplaySrcFunc = function($name) use ($allow_files) {
 			return function() use ($name, $allow_files) {
-				$src_name = $name . '.cpp';
-				if (isset($allow_files[$src_name])) {
+				$findSourceFile = function($name) use ($allow_files) {
+					$found = false;
+					foreach (array_keys($allow_files) as $file_name) {
+						if (strpos($file_name, $name) === 0) {
+							$rest = substr($file_name, strlen($name));
+							if (strlen($rest) > 0 && ($rest[0] === '.' || is_numeric($rest[0]))) {
+								return $file_name;
+							}
+						}
+					}
+					return null;
+				};
+
+				$src_name = $findSourceFile($name);
+				if (isset($src_name)) {
 					echoFilePre($src_name);
 				} else {
 					echoFileNotFound($src_name);
@@ -559,7 +572,7 @@ EOD
 			
 			$requirement = json_decode($problem['submission_requirement'], true);
 			
-			$zip_file_name = uojRandAvaiableSubmissionFileName();
+			$zip_file_name = uojRandAvailableSubmissionFileName();
 			$zip_file = new ZipArchive();
 			if ($zip_file->open(UOJContext::storagePath().$zip_file_name, ZipArchive::CREATE) !== true) {
 				becomeMsgPage('提交失败');

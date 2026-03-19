@@ -450,7 +450,14 @@ HTML;
 
 	switch ($file_language) {
 		case 'C++':
+		case 'C++98':
+		case 'C++03':
 		case 'C++11':
+		case 'C++14':
+		case 'C++17':
+		case 'C++20':
+		case 'C++23':
+		case 'C++26':
 			$sh_class = 'sh_cpp';
 			break;
 		case 'Python2':
@@ -459,9 +466,16 @@ HTML;
 			break;
 		case 'Java8':
 		case 'Java11':
+		case 'Java17':
+		case 'Java21':
 			$sh_class = 'sh_java';
 			break;
 		case 'C':
+		case 'C89':
+		case 'C99':
+		case 'C11':
+		case 'C17':
+		case 'C23':
 			$sh_class = 'sh_c';
 			break;
 		case 'Pascal':
@@ -487,7 +501,20 @@ HTML;
 function echoSubmissionContent($submission, $requirement) {
 	$zip_file = new ZipArchive();
 	$submission_content = json_decode($submission['content'], true);
-	$zip_file->open(UOJContext::storagePath().$submission_content['file_name']);
+	$zip_path = UOJContext::storagePath().$submission_content['file_name'];
+	$open_res = $zip_file->open($zip_path);
+
+	if ($open_res !== true) {
+		echo '<div class="card border-info mb-3">';
+		echo '<div class="card-header bg-danger">';
+		echo '<h4 class="card-title">Zip file open error</h4>';
+		echo '</div>';
+		echo '<div class="card-body">';
+		echo '<pre>'."\n"."Open zip file `".HTML::escape($zip_path)."` failed: $open_res"."\n".'</pre>';
+		echo '</div>';
+		echo '</div>';
+		return;
+	}
 	
 	$config = array();
 	foreach ($submission_content['config'] as $config_key => $config_val) {
@@ -502,7 +529,14 @@ function echoSubmissionContent($submission, $requirement) {
 			$footer_text = UOJLocale::get('problems::source code').', '.UOJLocale::get('problems::language').': '.$file_language;
 			switch ($file_language) {
 				case 'C++':
+				case 'C++98':
+				case 'C++03':
 				case 'C++11':
+				case 'C++14':
+				case 'C++17':
+				case 'C++20':
+				case 'C++23':
+				case 'C++26':
 					$sh_class = 'sh_cpp';
 					break;
 				case 'Python2':
@@ -511,9 +545,16 @@ function echoSubmissionContent($submission, $requirement) {
 					break;
 				case 'Java8':
 				case 'Java11':
+				case 'Java17':
+				case 'Java21':
 					$sh_class = 'sh_java';
 					break;
 				case 'C':
+				case 'C89':
+				case 'C99':
+				case 'C11':
+				case 'C17':
+				case 'C23':
 					$sh_class = 'sh_c';
 					break;
 				case 'Pascal':
