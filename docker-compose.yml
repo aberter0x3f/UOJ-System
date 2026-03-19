@@ -61,12 +61,6 @@ services:
       - SALT_2=_salt_2_
       - SALT_3=_salt_3_
       - UOJ_PROTOCOL=http
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 30s
 
   uoj-judger:
     image: ghcr.io/universaloj/uoj-judger:latest
@@ -80,8 +74,7 @@ services:
     cap_add:
       - SYS_PTRACE
     depends_on:
-      uoj-web:
-        condition: service_healthy
+      - uoj-web
     volumes:
       - ./uoj_data/judger/log:/opt/uoj_judger/log
     environment:
