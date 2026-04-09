@@ -49,7 +49,7 @@ services:
         source: ./.config.local.php
         target: /opt/uoj/web/app/.config.php
     ports:
-      - "80:80"
+      - "8080:80"
       - "3690:3690"
     environment:
       - DATABASE_HOST=uoj-db
