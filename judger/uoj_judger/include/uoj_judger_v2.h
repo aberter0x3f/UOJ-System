@@ -287,7 +287,7 @@ bool file_move(const string &a, const string &b) {  // move a to b
 /*====================== parameter ==================== */
 
 const runp::limits_t RL_DEFAULT(1, 256, 64);
-const runp::limits_t RL_JUDGER_DEFAULT(600, 10 * 1024, 128);  // 10GB. change it if needed
+const runp::limits_t RL_JUDGER_DEFAULT(600, 10 * 1024, 128);  // 10GiB. change it if needed
 const runp::limits_t RL_CHECKER_DEFAULT(5, 256, 64);
 const runp::limits_t RL_INTERACTOR_DEFAULT(1, 256, 64);
 const runp::limits_t RL_VALIDATOR_DEFAULT(5, 256, 64);
